@@ -22,12 +22,19 @@ from .factories import SubmissionFactory, SubmittedFactory
 
 pytestmark = pytest.mark.django_db
 
+# Описание должно проходить нижнюю границу в 100 символов, иначе отправка
+# отклоняется — это и проверяется отдельными тестами ниже.
 VALID = {
     "github_url": "https://github.com/sarahdev/ai-lint-agent",
     "live_url": "https://ai-lint-agent.vercel.app",
     "video_url": "https://youtube.com/watch?v=abc",
-    "description": "GitHub Action с проверкой кода через LLM.",
+    "description": (
+        "GitHub Action, который запускает проверку кода через LLM на каждом "
+        "pull request, помечает рискованные места и предлагает исправления."
+    ),
 }
+
+assert len(VALID["description"]) >= 100
 
 
 def _draft_url(contest) -> str:
@@ -101,11 +108,12 @@ def test_second_submit_updates_the_same_submission(client: APIClient, participan
     contest = ContestFactory()
 
     client.post(_submit_url(contest), VALID, format="json")
-    client.post(_submit_url(contest), VALID | {"description": "второй заход"}, format="json")
+    second_pass = VALID["description"] + " Во второй версии добавлен кэш."
+    client.post(_submit_url(contest), VALID | {"description": second_pass}, format="json")
 
     submission = Submission.objects.get()
     assert Submission.objects.count() == 1
-    assert submission.description == "второй заход"
+    assert submission.description == second_pass
 
 
 def test_resubmitting_does_not_move_the_submission_date(client, participant) -> None:
@@ -113,7 +121,11 @@ def test_resubmitting_does_not_move_the_submission_date(client, participant) -> 
     client.post(_submit_url(contest), VALID, format="json")
     first = Submission.objects.get().submitted_at
 
-    client.post(_submit_url(contest), VALID | {"description": "правка"}, format="json")
+    client.post(
+        _submit_url(contest),
+        VALID | {"description": VALID["description"] + " Правка."},
+        format="json",
+    )
 
     assert Submission.objects.get().submitted_at == first
 
@@ -251,3 +263,157 @@ def test_participant_only_sees_their_own_submission(client: APIClient, participa
 
     assert response.status_code == 200
     assert response.json()["submission"] is None
+
+
+# --- ссылка на демо-видео --------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://youtube.com/watch?v=abc123",
+        "https://www.youtube.com/watch?v=abc123",
+        "https://m.youtube.com/watch?v=abc123",
+        "https://youtu.be/abc123",
+        "https://www.youtube.com/shorts/abc123",
+    ],
+)
+def test_youtube_video_links_are_accepted(client: APIClient, participant, url) -> None:
+    contest = ContestFactory()
+
+    response = client.post(_submit_url(contest), VALID | {"video_url": url}, format="json")
+
+    assert response.status_code == 200
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://vimeo.com/123456",
+        "https://example.com/demo.mp4",
+        "https://drive.google.com/file/d/x/view",
+        "not-a-url",
+        # Хост здесь — evil.com, а youtube.com лишь в пути.
+        "https://evil.com/youtube.com/watch?v=abc",
+    ],
+)
+def test_non_youtube_video_links_are_rejected(client: APIClient, participant, url) -> None:
+    contest = ContestFactory()
+
+    response = client.post(_submit_url(contest), VALID | {"video_url": url}, format="json")
+
+    assert response.status_code == 400
+    assert "video_url" in response.json()["error"]["details"]
+
+
+def test_video_link_stays_optional(client: APIClient, participant) -> None:
+    contest = ContestFactory()
+
+    response = client.post(_submit_url(contest), VALID | {"video_url": ""}, format="json")
+
+    assert response.status_code == 200
+
+
+# --- ссылка на живую демонстрацию ------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://my-project.vercel.app",
+        "https://codecup.tech/demo",
+        "http://example.com",
+        "https://t.me/MyCoolBot",
+        "https://telegram.me/MyCoolBot",
+    ],
+)
+def test_website_and_telegram_bot_links_are_accepted(client, participant, url) -> None:
+    contest = ContestFactory()
+
+    response = client.post(_submit_url(contest), VALID | {"live_url": url}, format="json")
+
+    assert response.status_code == 200
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://youtube.com/watch?v=abc",
+        "https://youtu.be/abc",
+        "https://instagram.com/p/abc",
+        "https://www.instagram.com/someone/",
+        "https://tiktok.com/@someone",
+        "https://facebook.com/somepage",
+    ],
+)
+def test_social_and_video_links_are_not_a_live_demo(client, participant, url) -> None:
+    contest = ContestFactory()
+
+    response = client.post(_submit_url(contest), VALID | {"live_url": url}, format="json")
+
+    assert response.status_code == 400
+    assert "live_url" in response.json()["error"]["details"]
+
+
+@pytest.mark.parametrize(
+    "url",
+    ["http://localhost:3000", "http://127.0.0.1:8000", "https://intranet"],
+)
+def test_live_demo_must_be_publicly_reachable(client: APIClient, participant, url) -> None:
+    """Требование контеста — «живая, публично доступная демо-ссылка»."""
+    contest = ContestFactory()
+
+    response = client.post(_submit_url(contest), VALID | {"live_url": url}, format="json")
+
+    assert response.status_code == 400
+    assert "live_url" in response.json()["error"]["details"]
+
+
+# --- длина описания --------------------------------------------------------
+
+
+def test_submit_requires_a_description_of_at_least_100_characters(client, participant) -> None:
+    contest = ContestFactory()
+
+    response = client.post(
+        _submit_url(contest), VALID | {"description": "Слишком коротко."}, format="json"
+    )
+
+    assert response.status_code == 400
+    assert "description" in response.json()["error"]["details"]
+
+
+def test_the_error_says_how_long_the_description_currently_is(client, participant) -> None:
+    contest = ContestFactory()
+
+    response = client.post(_submit_url(contest), VALID | {"description": "я" * 40}, format="json")
+
+    # details хранит список сообщений на поле, поэтому берём первое.
+    assert "40" in response.json()["error"]["details"]["description"][0]
+
+
+def test_whitespace_does_not_count_towards_the_minimum(client, participant) -> None:
+    contest = ContestFactory()
+
+    response = client.post(
+        _submit_url(contest), VALID | {"description": "   " + "я" * 40 + "   "}, format="json"
+    )
+
+    assert response.status_code == 400
+
+
+def test_a_draft_may_have_a_short_description(client: APIClient, participant) -> None:
+    """Черновик пишут по частям — обрывать его на полуслове незачем."""
+    contest = ContestFactory()
+
+    response = client.put(_draft_url(contest), {"description": "Пока набросок."}, format="json")
+
+    assert response.status_code == 201
+
+
+def test_a_draft_still_rejects_a_non_youtube_video_link(client, participant) -> None:
+    contest = ContestFactory()
+
+    response = client.put(_draft_url(contest), {"video_url": "https://vimeo.com/1"}, format="json")
+
+    assert response.status_code == 400

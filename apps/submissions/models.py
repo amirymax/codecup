@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from urllib.parse import urlparse
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -8,15 +9,82 @@ from django.core.validators import MaxValueValidator
 from django.db import models
 from django.utils import timezone
 
+MIN_DESCRIPTION_LENGTH = 100
 MAX_DESCRIPTION_LENGTH = 500
 MAX_SCORE = 100
 
 GITHUB_URL = re.compile(r"^https?://(www\.)?github\.com/[^/\s]+/[^/\s]+", re.IGNORECASE)
 
+YOUTUBE_HOSTS = frozenset(
+    {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be", "www.youtu.be"}
+)
+
+# Пост в соцсети — это не живая демонстрация продукта.
+SOCIAL_HOSTS = YOUTUBE_HOSTS | frozenset(
+    {
+        "instagram.com",
+        "www.instagram.com",
+        "tiktok.com",
+        "www.tiktok.com",
+        "facebook.com",
+        "www.facebook.com",
+        "m.facebook.com",
+        "fb.com",
+        "vk.com",
+        "www.vk.com",
+    }
+)
+
+# Бот или канал в Telegram — допустимая «живая демонстрация».
+TELEGRAM_HOSTS = frozenset({"t.me", "www.t.me", "telegram.me", "telegram.dog"})
+
+LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "0.0.0.0", "::1"})
+
+
+def _hostname(value: str) -> str:
+    """Хост из ссылки в нижнем регистре.
+
+    Именно разбор URL, а не поиск подстроки: иначе ссылка вида
+    https://example.com/youtube.com прошла бы проверку как YouTube.
+    """
+    return (urlparse(value).hostname or "").lower()
+
+
+def _has_web_scheme(value: str) -> bool:
+    return urlparse(value).scheme.lower() in {"http", "https"}
+
 
 def validate_github_url(value: str) -> None:
     if not GITHUB_URL.match(value):
         raise ValidationError("Ссылка должна вести на репозиторий github.com.")
+
+
+def validate_video_url(value: str) -> None:
+    """Демо-видео должно лежать на YouTube."""
+    if not _has_web_scheme(value) or _hostname(value) not in YOUTUBE_HOSTS:
+        raise ValidationError("Ссылка на видео должна вести на YouTube.")
+
+
+def validate_live_url(value: str) -> None:
+    """Живая демонстрация: сайт или бот в Telegram, но не пост в соцсети."""
+    if not _has_web_scheme(value):
+        raise ValidationError("Ссылка должна начинаться с http:// или https://.")
+
+    host = _hostname(value)
+
+    if host in TELEGRAM_HOSTS:
+        return
+
+    if host in SOCIAL_HOSTS:
+        raise ValidationError(
+            "Нужна ссылка на работающий продукт, а не на видео или пост в соцсети. "
+            "Подойдёт сайт или бот в Telegram."
+        )
+
+    # Требование контеста — демонстрация, доступная всем, поэтому локальные
+    # адреса и хосты без домена не подходят.
+    if host in LOCAL_HOSTS or "." not in host:
+        raise ValidationError("Демонстрация должна быть доступна публично.")
 
 
 class SubmissionStatus(models.TextChoices):

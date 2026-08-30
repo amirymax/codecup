@@ -9,9 +9,12 @@ from .models import (
     GITHUB_URL,
     MAX_DESCRIPTION_LENGTH,
     MAX_SCORE,
+    MIN_DESCRIPTION_LENGTH,
     DisplayStatus,
     Submission,
     SubmissionStatus,
+    validate_live_url,
+    validate_video_url,
 )
 
 
@@ -64,7 +67,19 @@ class MySubmissionSerializer(_BaseSubmissionSerializer):
             raise serializers.ValidationError("Ссылка должна вести на репозиторий github.com.")
         return value
 
+    def validate_live_url(self, value: str) -> str:
+        if value:
+            _reraise(validate_live_url, value)
+        return value
+
+    def validate_video_url(self, value: str) -> str:
+        if value:
+            _reraise(validate_video_url, value)
+        return value
+
     def validate_description(self, value: str) -> str:
+        # Верхняя граница действует всегда, нижняя — только при отправке:
+        # черновик пишут по частям, и обрывать его на полуслове незачем.
         if len(value) > MAX_DESCRIPTION_LENGTH:
             raise serializers.ValidationError(f"Не длиннее {MAX_DESCRIPTION_LENGTH} символов.")
         return value
@@ -82,6 +97,14 @@ class MySubmissionSerializer(_BaseSubmissionSerializer):
                 missing["github_url"] = "Ссылка на GitHub обязательна."
             if not merged.get("live_url"):
                 missing["live_url"] = "Ссылка на демо обязательна."
+
+            description = (merged.get("description") or "").strip()
+            if len(description) < MIN_DESCRIPTION_LENGTH:
+                missing["description"] = (
+                    f"Опишите проект хотя бы в {MIN_DESCRIPTION_LENGTH} символах "
+                    f"(сейчас {len(description)})."
+                )
+
             if missing:
                 raise serializers.ValidationError(missing)
         return attrs
@@ -97,6 +120,7 @@ class MySubmissionSerializer(_BaseSubmissionSerializer):
         return {
             "github_url": self.instance.github_url,
             "live_url": self.instance.live_url,
+            "description": self.instance.description,
         }
 
 
@@ -203,3 +227,13 @@ class AdminSubmissionEnvelopeSerializer(serializers.Serializer):
 
     submission = AdminSubmissionDetailSerializer()
     navigation = NavigationSerializer()
+
+
+def _reraise(validator, value: str) -> None:
+    """Переводит ValidationError из модели в ошибку поля DRF."""
+    from django.core.exceptions import ValidationError as DjangoValidationError
+
+    try:
+        validator(value)
+    except DjangoValidationError as exc:
+        raise serializers.ValidationError(exc.messages[0]) from exc

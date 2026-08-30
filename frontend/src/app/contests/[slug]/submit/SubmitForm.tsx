@@ -15,6 +15,7 @@ import { saveDraft, submitSolution, type SubmissionDraft } from "@/lib/api/submi
 import { submit as t } from "@/messages/ru";
 import type { MySubmission } from "@/lib/api/types";
 
+const MIN_DESCRIPTION = 100;
 const MAX_DESCRIPTION = 500;
 
 type View = "form" | "success";
@@ -42,6 +43,9 @@ export function SubmitForm({
   const [busy, setBusy] = useState<Busy>("idle");
   const [view, setView] = useState<View>("form");
   const [draftSaved, setDraftSaved] = useState(false);
+
+  // Пробелы по краям не считаются — так же, как на сервере.
+  const descriptionLength = fields.description.trim().length;
 
   function update(field: keyof SubmissionDraft) {
     return (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -161,12 +165,23 @@ export function SubmitForm({
             maxLength={MAX_DESCRIPTION}
             aria-invalid={Boolean(errors.description)}
           />
-          <div
-            className={`mt-1 text-right font-mono text-[11.5px] ${
-              fields.description.length >= MAX_DESCRIPTION ? "text-red" : "text-muted-3"
-            }`}
-          >
-            {fields.description.length}/{MAX_DESCRIPTION}
+          {/* Нижняя граница показывается заранее: узнать о ней только из
+              отказа при отправке — неприятный сюрприз. */}
+          <div className="mt-1 flex justify-between font-mono text-[11.5px]">
+            <span className="text-muted-3">
+              {descriptionLength < MIN_DESCRIPTION && `минимум ${MIN_DESCRIPTION}`}
+            </span>
+            <span
+              className={
+                descriptionLength >= MAX_DESCRIPTION
+                  ? "text-red"
+                  : descriptionLength < MIN_DESCRIPTION
+                    ? "text-amber"
+                    : "text-muted-3"
+              }
+            >
+              {descriptionLength}/{MAX_DESCRIPTION}
+            </span>
           </div>
           <FieldError message={errors.description} />
         </div>
