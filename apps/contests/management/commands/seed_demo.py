@@ -10,6 +10,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.contests.models import Contest, ContestStatus
+from apps.submissions.models import Submission, SubmissionStatus
 from apps.users.models import User
 
 FEATURED = {
@@ -72,9 +73,13 @@ class Command(BaseCommand):
             self._contest(DRAFT, deadline=now + timedelta(days=60), author=admin),
         ]
 
+        submissions = self._submissions(created[0])
+
         for contest in created:
             self.stdout.write(f"  {contest.display_number} {contest.title} — {contest.state}")
-        self.stdout.write(self.style.SUCCESS(f"Готово: {len(created)} контестов."))
+        self.stdout.write(
+            self.style.SUCCESS(f"Готово: {len(created)} контестов, {len(submissions)} заявок.")
+        )
 
     def _demo_admin(self, telegram_id: int) -> User:
         admin, created = User.objects.get_or_create(
@@ -93,3 +98,35 @@ class Command(BaseCommand):
             defaults={**data, "deadline": deadline, "created_by": author},
         )
         return contest
+
+    def _submissions(self, contest: Contest) -> list[Submission]:
+        """Четыре заявки из макета админ-панели — по одной на каждый статус."""
+        people = [
+            ("sarah_dev", "ai-lint-agent", SubmissionStatus.SUBMITTED, None, False),
+            ("max_builds", "promptql", SubmissionStatus.REVIEWED, 78, False),
+            ("ana_codes", "devcopilot-cli", SubmissionStatus.DRAFT, None, False),
+            ("jordan_k", "aitest-runner", SubmissionStatus.REVIEWED, 94, True),
+        ]
+
+        created = []
+        for index, (username, repo, status, score, is_winner) in enumerate(people, start=10):
+            user, _ = User.objects.get_or_create(
+                telegram_id=index,
+                defaults={"username": username, "telegram_username": username},
+            )
+            submission, _ = Submission.objects.update_or_create(
+                contest=contest,
+                user=user,
+                defaults={
+                    "github_url": f"https://github.com/{username}/{repo}",
+                    "live_url": f"https://{repo}.vercel.app",
+                    "video_url": "https://youtube.com/watch?v=demo",
+                    "description": "Инструмент для разработчиков, использующий ИИ.",
+                    "status": status,
+                    "score": score,
+                    "is_winner": is_winner,
+                    "submitted_at": (None if status == SubmissionStatus.DRAFT else timezone.now()),
+                },
+            )
+            created.append(submission)
+        return created

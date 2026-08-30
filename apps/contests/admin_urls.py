@@ -1,5 +1,7 @@
 from django.urls import path
 
+from apps.submissions.urls import admin_urlpatterns as submission_urlpatterns
+
 from .views import AdminContestDetailView, AdminContestListCreateView, AdminContestPublishView
 
 urlpatterns = [
@@ -10,4 +12,5 @@ urlpatterns = [
         AdminContestPublishView.as_view(),
         name="admin-contest-publish",
     ),
+    *submission_urlpatterns,
 ]

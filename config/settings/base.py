@@ -38,6 +38,7 @@ LOCAL_APPS = [
     "apps.common",
     "apps.users",
     "apps.contests",
+    "apps.submissions",
     "apps.telegrambot",
 ]
 
