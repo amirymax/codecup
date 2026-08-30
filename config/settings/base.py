@@ -37,6 +37,7 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     "apps.common",
     "apps.users",
+    "apps.contests",
     "apps.telegrambot",
 ]
 

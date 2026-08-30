@@ -39,3 +39,25 @@ def test_non_api_exceptions_are_not_swallowed() -> None:
 @pytest.mark.parametrize("status_code", [409])
 def test_domain_error_defaults_to_conflict(status_code: int) -> None:
     assert DomainError.status_code == status_code
+
+
+def test_django_http404_keeps_the_not_found_code() -> None:
+    """get_object_or_404 бросает Http404, а не NotFound — код не должен теряться."""
+    from django.http import Http404
+
+    assert _handle(Http404("нет такого"))["code"] == "not_found"
+
+
+def test_django_permission_denied_keeps_its_code() -> None:
+    from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
+
+    assert _handle(DjangoPermissionDenied())["code"] == "permission_denied"
+
+
+def test_http404_message_is_russian_and_hides_the_model_name() -> None:
+    from django.http import Http404
+
+    error = _handle(Http404("No Contest matches the given query."))
+
+    assert "Contest" not in error["message"]
+    assert error["message"] == "Страница не найдена."
