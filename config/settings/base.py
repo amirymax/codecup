@@ -175,5 +175,9 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": "INFO"},
     "loggers": {
         "django.db.backends": {"level": "WARNING", "handlers": ["console"], "propagate": False},
+        # httpx логирует полный URL запроса, а токен бота — часть пути
+        # (/bot<TOKEN>/getMe). На уровне INFO он утекал бы в каждый лог-файл.
+        "httpx": {"level": "WARNING", "handlers": ["console"], "propagate": False},
+        "httpcore": {"level": "WARNING", "handlers": ["console"], "propagate": False},
     },
 }

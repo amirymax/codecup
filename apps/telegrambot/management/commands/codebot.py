@@ -59,10 +59,14 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Бот @{bot['username']} запущен."))
         self.stdout.write(f"  Ссылка для входа: https://t.me/{bot['username']}?start=<код>")
         self.stdout.write("  Остановка — Ctrl+C\n")
+        # Под systemd и в Docker вывод уходит в файл и буферизуется:
+        # без сброса бот кажется зависшим, хотя уже работает.
+        self.stdout.flush()
 
         self._poll(client, timeout=options["timeout"])
 
         self.stdout.write(self.style.SUCCESS("Бот остановлен."))
+        self.stdout.flush()
 
     # --- цикл опроса ----------------------------------------------------
 

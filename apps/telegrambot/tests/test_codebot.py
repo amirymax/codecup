@@ -1,39 +1,40 @@
-"""Команда codebot: цикл длинного опроса.
+"""Команда codebot: цикл опроса и его устойчивость.
 
-Сеть здесь не используется — клиент подменяется. Проверяется именно логика
-цикла: сдвиг offset, устойчивость к ошибкам и снятие вебхука.
+Сеть здесь не задействована — клиент подменяется заглушкой, поэтому тесты
+проходят и без токена бота.
 """
 
 from __future__ import annotations
-
-from contextlib import suppress
 
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
 from apps.telegrambot.management.commands import codebot as codebot_module
-from apps.users.models import AuthTokenStatus, TelegramAuthToken
+from apps.users.models import AuthTokenStatus, TelegramAuthToken, User
 from apps.users.tests.factories import callback_update, start_update
 
 pytestmark = pytest.mark.django_db
 
 
 class FakeClient:
-    """Телеграм, отдающий заранее заданные пачки апдейтов."""
+    """Заглушка Bot API: отдаёт заранее заданные пачки апдейтов."""
 
-    def __init__(self, batches, webhook_url=""):
+    def __init__(self, batches, *, fail_times=0):
         self.batches = list(batches)
-        self.webhook_url = webhook_url
+        self.fail_times = fail_times
+        self.calls: list[tuple[str, dict]] = []
         self.offsets: list[int | None] = []
         self.webhook_deleted = False
-        self.is_configured = True
+        self.command = None
+
+    is_configured = True
 
     def get_me(self):
-        return {"username": "CodeCupBot"}
+        return {"username": "Code_Cup_Bot"}
 
     def get_webhook_info(self):
-        return {"url": self.webhook_url}
+        return {"url": "https://example.test/hook"}
 
     def delete_webhook(self):
         self.webhook_deleted = True
@@ -41,93 +42,136 @@ class FakeClient:
 
     def get_updates(self, offset, timeout):
         self.offsets.append(offset)
+
+        if self.fail_times > 0:
+            self.fail_times -= 1
+            import httpx
+
+            raise httpx.ConnectError("сеть недоступна")
+
         if not self.batches:
-            raise KeyboardInterrupt  # выходим из цикла в тесте
+            # Апдейты кончились — просим команду завершиться.
+            self.command.running = False
+            return []
         return self.batches.pop(0)
 
-
-def _run(client, **options) -> None:
-    """Запускает команду с подменённым клиентом и останавливает её."""
-    command = codebot_module.Command()
-    command.stdout = type("Sink", (), {"write": lambda self, *a, **k: None})()
-    command.style = type("Style", (), {"SUCCESS": str, "WARNING": str, "ERROR": str})()
-
-    # FakeClient бросает KeyboardInterrupt, когда апдейты кончились — так
-    # цикл завершается ровно тем же путём, что и по Ctrl+C.
-    with suppress(KeyboardInterrupt):
-        command.handle(timeout=1, keep_webhook=False, **options)
+    # методы, которые дёргает обработчик апдейтов
+    def call(self, method, **payload):
+        self.calls.append((method, payload))
+        return {"message_id": 1}
 
 
 @pytest.fixture
-def patched(monkeypatch):
-    def install(client):
-        monkeypatch.setattr(codebot_module, "TelegramClient", lambda *a, **k: client)
-        return client
+def run_bot(monkeypatch):
+    """Запускает codebot с подменённым клиентом и возвращает заглушку."""
 
-    return install
+    def run(batches, **options):
+        fake = FakeClient(batches, fail_times=options.pop("fail_times", 0))
+
+        monkeypatch.setattr(codebot_module, "TelegramClient", lambda: fake)
+        monkeypatch.setattr("apps.telegrambot.client.TelegramClient.call", fake.call)
+        monkeypatch.setattr(codebot_module.Command, "_sleep", lambda self, seconds: None)
+
+        original_handle = codebot_module.Command.handle
+
+        def handle(command_self, *args, **kwargs):
+            fake.command = command_self
+            return original_handle(command_self, *args, **kwargs)
+
+        monkeypatch.setattr(codebot_module.Command, "handle", handle)
+        call_command("codebot", **options)
+        return fake
+
+    return run
 
 
-def test_updates_are_handled_through_the_same_code_as_the_webhook(patched) -> None:
-    """Опрос и вебхук обязаны вести себя одинаково — обработчик у них общий."""
+def _issue() -> TelegramAuthToken:
     token, _ = TelegramAuthToken.issue()
-    client = patched(FakeClient([[callback_update("confirm", token.nonce)]]))
-
-    _run(client)
-
-    token.refresh_from_db()
-    assert token.status == AuthTokenStatus.CONFIRMED
+    return token
 
 
-def test_offset_advances_past_processed_updates(patched) -> None:
-    client = patched(FakeClient([[start_update(), {"update_id": 5, "message": {}}], []]))
-
-    _run(client)
-
-    # Первый запрос без offset, следующий — за последним update_id.
-    assert client.offsets[0] is None
-    assert client.offsets[1] == 6
+# --- запуск ----------------------------------------------------------------
 
 
-def test_a_failing_update_does_not_stop_the_bot(patched, monkeypatch) -> None:
-    """Иначе одна кривая полезная нагрузка вешала бы бота до перезапуска."""
-    calls = {"count": 0}
-
-    def explode(update):
-        calls["count"] += 1
-        raise ValueError("сломанный апдейт")
-
-    monkeypatch.setattr(codebot_module, "handle_update", explode)
-    client = patched(FakeClient([[{"update_id": 1}, {"update_id": 2}], []]))
-
-    _run(client)
-
-    assert calls["count"] == 2
-    assert client.offsets[-1] == 3
-
-
-def test_webhook_is_removed_before_polling(patched) -> None:
-    """Telegram не отдаёт getUpdates, пока висит вебхук, — он ответит 409."""
-    client = patched(FakeClient([[]], webhook_url="https://api.codecup.tech/hook/"))
-
-    _run(client)
-
-    assert client.webhook_deleted
-
-
-def test_webhook_is_kept_when_asked(patched) -> None:
-    client = patched(FakeClient([[]], webhook_url="https://api.codecup.tech/hook/"))
-
-    command = codebot_module.Command()
-    command.stdout = type("Sink", (), {"write": lambda self, *a, **k: None})()
-    command.style = type("Style", (), {"SUCCESS": str, "WARNING": str, "ERROR": str})()
-    with suppress(KeyboardInterrupt):
-        command.handle(timeout=1, keep_webhook=True)
-
-    assert not client.webhook_deleted
-
-
-def test_missing_token_fails_with_a_clear_message(settings) -> None:
+def test_refuses_to_start_without_a_token(monkeypatch, settings) -> None:
     settings.TELEGRAM_BOT_TOKEN = ""
 
     with pytest.raises(CommandError, match="TELEGRAM_BOT_TOKEN"):
         call_command("codebot")
+
+
+def test_removes_the_webhook_before_polling(run_bot) -> None:
+    """Telegram не отдаёт апдейты опросом, пока установлен вебхук."""
+    fake = run_bot([])
+
+    assert fake.webhook_deleted
+
+
+def test_keep_webhook_leaves_it_alone(run_bot) -> None:
+    fake = run_bot([], keep_webhook=True)
+
+    assert not fake.webhook_deleted
+
+
+# --- обработка апдейтов ----------------------------------------------------
+
+
+def test_start_with_a_nonce_prompts_for_confirmation(run_bot) -> None:
+    token = _issue()
+
+    fake = run_bot([[{**start_update(token.nonce), "update_id": 1}]])
+
+    sent = [payload for method, payload in fake.calls if method == "sendMessage"]
+    assert sent
+    assert sent[-1]["reply_markup"]["inline_keyboard"][0][0]["callback_data"] == (
+        f"confirm:{token.nonce}"
+    )
+
+
+def test_confirming_through_polling_logs_the_user_in(run_bot) -> None:
+    """Тот же результат, что и через вебхук: обработчик у них общий."""
+    token = _issue()
+
+    run_bot(
+        [
+            [{**start_update(token.nonce), "update_id": 1}],
+            [{**callback_update("confirm", token.nonce), "update_id": 2}],
+        ]
+    )
+
+    token.refresh_from_db()
+    assert token.status == AuthTokenStatus.CONFIRMED
+    assert token.user == User.objects.get()
+
+
+# --- устойчивость ----------------------------------------------------------
+
+
+def test_offset_advances_past_a_failing_update(run_bot, monkeypatch) -> None:
+    """Иначе «ядовитый» апдейт возвращался бы бесконечно."""
+
+    def boom(update):
+        raise ValueError("сломанный апдейт")
+
+    monkeypatch.setattr(codebot_module, "handle_update", boom)
+
+    fake = run_bot([[{**start_update(), "update_id": 7}]])
+
+    # Следующий запрос ушёл уже со сдвинутым offset.
+    assert fake.offsets[-1] == 8
+
+
+def test_network_errors_are_retried_not_fatal(run_bot) -> None:
+    token = _issue()
+
+    fake = run_bot([[{**start_update(token.nonce), "update_id": 1}]], fail_times=2)
+
+    # Два обрыва, затем успешный запрос — и апдейт всё-таки обработан.
+    assert len(fake.offsets) >= 3
+    assert any(method == "sendMessage" for method, _ in fake.calls)
+
+
+def test_first_request_starts_without_an_offset(run_bot) -> None:
+    fake = run_bot([])
+
+    assert fake.offsets[0] is None
