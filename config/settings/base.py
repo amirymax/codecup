@@ -1,5 +1,6 @@
 """Настройки, общие для всех окружений."""
 
+from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -28,12 +29,15 @@ DJANGO_APPS = [
 
 THIRD_PARTY_APPS = [
     "rest_framework",
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "drf_spectacular",
 ]
 
 LOCAL_APPS = [
     "apps.common",
+    "apps.users",
+    "apps.telegrambot",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -92,16 +96,50 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [],
+    "DEFAULT_AUTHENTICATION_CLASSES": ["apps.users.authentication.CookieJWTAuthentication"],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
     "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.DefaultPagination",
     "PAGE_SIZE": 20,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "apps.common.exceptions.api_exception_handler",
+    "DEFAULT_THROTTLE_CLASSES": ["rest_framework.throttling.ScopedRateThrottle"],
     "DEFAULT_THROTTLE_RATES": {
         "auth_start": "10/min",
+        "auth_status": "120/min",
     },
 }
+
+AUTH_USER_MODEL = "users.User"
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
+    "SIGNING_KEY": SECRET_KEY,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+# --- Куки сессии ------------------------------------------------------------
+AUTH_COOKIE_ACCESS_NAME = "cc_access"
+AUTH_COOKIE_REFRESH_NAME = "cc_refresh"
+# Refresh-кука нужна только эндпоинтам авторизации, поэтому её путь узкий.
+AUTH_COOKIE_REFRESH_PATH = "/api/auth/"
+AUTH_COOKIE_SAMESITE = "Lax"
+AUTH_COOKIE_SECURE = not DEBUG
+AUTH_COOKIE_DOMAIN = env("AUTH_COOKIE_DOMAIN", default=None)
+
+# --- Telegram ---------------------------------------------------------------
+TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", default="")
+TELEGRAM_BOT_USERNAME = env("TELEGRAM_BOT_USERNAME", default="")
+TELEGRAM_WEBHOOK_SECRET = env("TELEGRAM_WEBHOOK_SECRET", default="")
+TELEGRAM_API_URL = "https://api.telegram.org"
+TELEGRAM_REQUEST_TIMEOUT = 10
+# Столько живёт ссылка для входа; на экране входа это состояние «ссылка устарела».
+TELEGRAM_AUTH_TOKEN_TTL = env.int("TELEGRAM_AUTH_TOKEN_TTL", default=300)
+
+FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "CodeCup.tech API",
