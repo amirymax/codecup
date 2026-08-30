@@ -1010,9 +1010,7 @@ export interface components {
         };
         /** @description Страница профиля участника. */
         PublicProfile: {
-            user: {
-                [key: string]: unknown;
-            };
+            user: components["schemas"]["User"];
             submissions_count: number;
             wins_count: number;
             submissions: components["schemas"]["ProfileSubmission"][];
