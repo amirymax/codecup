@@ -1,7 +1,7 @@
 PY := .venv/bin/python
 PIP := .venv/bin/pip
 
-.PHONY: help venv install up down logs psql migrate migrations run shell superuser test lint format check reset-db
+.PHONY: help venv install up down logs psql migrate migrations run shell superuser schema test lint format check reset-db
 
 help: ## Показать список команд
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -46,6 +46,10 @@ shell: ## Django shell
 
 superuser: ## Создать администратора
 	$(PY) manage.py createsuperuser
+
+schema: ## Обновить схему OpenAPI и типы для фронтенда
+	$(PY) manage.py spectacular --format openapi-json --file frontend/src/lib/api/openapi.json --fail-on-warn
+	npx --yes openapi-typescript@7 frontend/src/lib/api/openapi.json -o frontend/src/lib/api/schema.ts
 
 test: ## Прогнать тесты
 	.venv/bin/pytest

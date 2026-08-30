@@ -32,3 +32,28 @@ def no_telegram_calls(monkeypatch):
 
     monkeypatch.setattr("apps.telegrambot.client.TelegramClient.call", fake_call)
     return calls
+
+
+def _authenticate(client, user):
+    from django.conf import settings
+
+    from apps.users.cookies import issue_tokens
+
+    access, refresh = issue_tokens(user)
+    client.cookies[settings.AUTH_COOKIE_ACCESS_NAME] = access
+    client.cookies[settings.AUTH_COOKIE_REFRESH_NAME] = refresh
+    return user
+
+
+@pytest.fixture
+def participant(client):
+    from .factories import UserFactory
+
+    return _authenticate(client, UserFactory())
+
+
+@pytest.fixture
+def admin(client):
+    from .factories import AdminFactory
+
+    return _authenticate(client, AdminFactory())

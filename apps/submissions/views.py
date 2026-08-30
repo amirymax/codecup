@@ -15,9 +15,12 @@ from apps.contests.models import Contest
 from .models import Submission, SubmissionStatus
 from .serializers import (
     AdminSubmissionDetailSerializer,
+    AdminSubmissionEnvelopeSerializer,
     AdminSubmissionListSerializer,
+    MySubmissionEnvelopeSerializer,
     MySubmissionSerializer,
     ProfileSubmissionSerializer,
+    PublicProfileSerializer,
 )
 
 
@@ -38,7 +41,7 @@ class MySubmissionView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(summary="Моя заявка", responses={200: MySubmissionSerializer})
+    @extend_schema(summary="Моя заявка", responses={200: MySubmissionEnvelopeSerializer})
     def get(self, request: Request, slug: str) -> Response:
         contest = get_object_or_404(Contest.objects.public(), slug=slug)
         submission = Submission.objects.filter(contest=contest, user=request.user).first()
@@ -49,7 +52,7 @@ class MySubmissionView(APIView):
     @extend_schema(
         summary="Сохранить черновик заявки",
         request=MySubmissionSerializer,
-        responses={200: MySubmissionSerializer},
+        responses={200: MySubmissionEnvelopeSerializer},
     )
     def put(self, request: Request, slug: str) -> Response:
         contest = _open_contest(slug)
@@ -71,7 +74,7 @@ class SubmitSolutionView(APIView):
     @extend_schema(
         summary="Отправить решение",
         request=MySubmissionSerializer,
-        responses={200: MySubmissionSerializer},
+        responses={200: MySubmissionEnvelopeSerializer},
     )
     def post(self, request: Request, slug: str) -> Response:
         contest = _open_contest(slug)
@@ -152,7 +155,7 @@ class AdminSubmissionDetailView(APIView):
 
     permission_classes = [IsAdminUser]
 
-    @extend_schema(summary="Заявка", responses={200: AdminSubmissionDetailSerializer})
+    @extend_schema(summary="Заявка", responses={200: AdminSubmissionEnvelopeSerializer})
     def get(self, request: Request, pk: int) -> Response:
         submission = get_object_or_404(Submission.objects.select_related("contest", "user"), pk=pk)
         return Response(self._payload(submission))
@@ -160,7 +163,7 @@ class AdminSubmissionDetailView(APIView):
     @extend_schema(
         summary="Сохранить проверку",
         request=AdminSubmissionDetailSerializer,
-        responses={200: AdminSubmissionDetailSerializer},
+        responses={200: AdminSubmissionEnvelopeSerializer},
     )
     def patch(self, request: Request, pk: int) -> Response:
         submission = get_object_or_404(Submission.objects.select_related("contest", "user"), pk=pk)
@@ -214,7 +217,7 @@ class PublicProfileView(APIView):
 
     permission_classes = []
 
-    @extend_schema(summary="Профиль участника")
+    @extend_schema(summary="Профиль участника", responses={200: PublicProfileSerializer})
     def get(self, request: Request, username: str) -> Response:
         from apps.users.models import User
         from apps.users.serializers import UserSerializer

@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from .models import Contest, ContestStatus, validate_requirements
+from apps.submissions.serializers import MySubmissionSerializer
+
+from .models import Contest, ContestState, ContestStatus, validate_requirements
 
 
 class ContestListSerializer(serializers.ModelSerializer):
     """Карточка контеста в списке и на главной."""
 
-    state = serializers.CharField(read_only=True)
+    # ChoiceField, а не CharField: тогда в схеме появляется перечисление,
+    # и на фронтенде это union вместо безликого string.
+    state = serializers.ChoiceField(choices=ContestState.choices, read_only=True)
     display_number = serializers.CharField(read_only=True)
     seconds_left = serializers.SerializerMethodField()
     participants_count = serializers.SerializerMethodField()
@@ -66,14 +71,13 @@ class ContestDetailSerializer(ContestListSerializer):
         ]
         read_only_fields = fields
 
+    @extend_schema_field(MySubmissionSerializer(allow_null=True))
     def get_my_submission(self, contest: Contest):
         """Своя заявка, если пользователь вошёл.
 
         Экран контеста меняет кнопку на «Редактировать заявку», когда решение
         уже отправлено, поэтому страница должна знать об этом сразу.
         """
-        from apps.submissions.serializers import MySubmissionSerializer
-
         request = self.context.get("request")
         if request is None or not request.user.is_authenticated:
             return None
@@ -85,7 +89,7 @@ class ContestDetailSerializer(ContestListSerializer):
 class AdminContestSerializer(serializers.ModelSerializer):
     """Создание и редактирование контеста админом."""
 
-    state = serializers.CharField(read_only=True)
+    state = serializers.ChoiceField(choices=ContestState.choices, read_only=True)
     display_number = serializers.CharField(read_only=True)
 
     class Meta:

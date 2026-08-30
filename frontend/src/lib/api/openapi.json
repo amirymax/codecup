@@ -1,0 +1,2475 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "CodeCup.tech API",
+        "version": "0.1.0",
+        "description": "API платформы контестов для разработчиков."
+    },
+    "paths": {
+        "/api/admin/contests/": {
+            "get": {
+                "operationId": "admin_contests_list",
+                "description": "Список и создание контестов в админке.",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedAdminContestList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "admin_contests_create",
+                "description": "Список и создание контестов в админке.",
+                "tags": [
+                    "admin"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminContestRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminContestRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminContestRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminContest"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/admin/contests/{id}/": {
+            "get": {
+                "operationId": "admin_contests_retrieve",
+                "description": "Просмотр, правка и удаление контеста.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminContest"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "admin_contests_update",
+                "description": "Просмотр, правка и удаление контеста.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminContestRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminContestRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminContestRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminContest"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "admin_contests_partial_update",
+                "description": "Просмотр, правка и удаление контеста.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedAdminContestRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedAdminContestRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedAdminContestRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminContest"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "admin_contests_destroy",
+                "description": "Просмотр, правка и удаление контеста.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/admin/contests/{id}/publish/": {
+            "post": {
+                "operationId": "admin_contests_publish_create",
+                "description": "Публикация черновика.",
+                "summary": "Опубликовать контест",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminContest"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/admin/stats/": {
+            "get": {
+                "operationId": "admin_stats_retrieve",
+                "description": "Счётчики для админ-панели.",
+                "summary": "Счётчики админ-панели",
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminStats"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/admin/submissions/": {
+            "get": {
+                "operationId": "admin_submissions_list",
+                "description": "Список заявок в админке.",
+                "summary": "Заявки",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "contest",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Слаг контеста"
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "search",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Поиск по участнику или репозиторию"
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "draft",
+                                "reviewed",
+                                "submitted",
+                                "winner"
+                            ]
+                        },
+                        "description": "Фильтр статуса; winner — только победители"
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedAdminSubmissionListList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/admin/submissions/{id}/": {
+            "get": {
+                "operationId": "admin_submissions_retrieve",
+                "description": "Экран проверки заявки.",
+                "summary": "Заявка",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminSubmissionEnvelope"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "admin_submissions_partial_update",
+                "description": "Экран проверки заявки.",
+                "summary": "Сохранить проверку",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedAdminSubmissionDetailRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedAdminSubmissionDetailRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedAdminSubmissionDetailRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminSubmissionEnvelope"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/admin/users/": {
+            "get": {
+                "operationId": "admin_users_list",
+                "description": "Список пользователей.",
+                "summary": "Пользователи",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "is_staff",
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "description": "Только администраторы"
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "search",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Поиск по логину, имени или Telegram ID"
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedAdminUserList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/auth/logout/": {
+            "post": {
+                "operationId": "auth_logout_create",
+                "description": "Выход: чистим куки и гасим refresh-токен.",
+                "summary": "Выйти",
+                "tags": [
+                    "auth"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/auth/me/": {
+            "get": {
+                "operationId": "auth_me_retrieve",
+                "description": "Текущий пользователь по куке.",
+                "summary": "Текущий пользователь",
+                "tags": [
+                    "auth"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/auth/refresh/": {
+            "post": {
+                "operationId": "auth_refresh_create",
+                "description": "Обновление access-токена по refresh-куке.",
+                "summary": "Обновить сессию",
+                "tags": [
+                    "auth"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/auth/telegram/exchange/": {
+            "post": {
+                "operationId": "auth_telegram_exchange_create",
+                "description": "Шаг 3: обменять подтверждённый код на сессию в куках.",
+                "summary": "Обменять код на сессию",
+                "tags": [
+                    "auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AuthExchangeRequestRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AuthExchangeRequestRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AuthExchangeRequestRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/auth/telegram/start/": {
+            "post": {
+                "operationId": "auth_telegram_start_create",
+                "description": "Шаг 1: выдать одноразовый код и ссылку на бота.",
+                "summary": "Начать вход через Telegram",
+                "tags": [
+                    "auth"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthStartResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/auth/telegram/status/": {
+            "get": {
+                "operationId": "auth_telegram_status_retrieve",
+                "description": "Шаг 2: фронтенд опрашивает этот эндпоинт, пока ждёт подтверждения.",
+                "summary": "Статус попытки входа",
+                "tags": [
+                    "auth"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthStatusResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/contests/": {
+            "get": {
+                "operationId": "contests_list",
+                "description": "Публичный список опубликованных контестов.",
+                "summary": "Список контестов",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "state",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ended",
+                                "live"
+                            ]
+                        },
+                        "description": "Фильтр: live или ended. По умолчанию — все опубликованные."
+                    }
+                ],
+                "tags": [
+                    "contests"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedContestListList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/contests/{slug}/": {
+            "get": {
+                "operationId": "contests_retrieve",
+                "description": "Страница контеста.",
+                "summary": "Контест",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "contests"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContestDetail"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/contests/{slug}/submission/": {
+            "get": {
+                "operationId": "contests_submission_retrieve",
+                "description": "Своя заявка на контест: одна на человека, правится до дедлайна.",
+                "summary": "Моя заявка",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "contests"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MySubmissionEnvelope"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "contests_submission_update",
+                "description": "Своя заявка на контест: одна на человека, правится до дедлайна.",
+                "summary": "Сохранить черновик заявки",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "contests"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MySubmissionRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MySubmissionRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MySubmissionRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MySubmissionEnvelope"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/contests/{slug}/submission/submit/": {
+            "post": {
+                "operationId": "contests_submission_submit_create",
+                "description": "Перевод заявки из черновика в отправленные.",
+                "summary": "Отправить решение",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "contests"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MySubmissionRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MySubmissionRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MySubmissionRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MySubmissionEnvelope"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/contests/featured/": {
+            "get": {
+                "operationId": "contests_featured_retrieve",
+                "description": "Контест для главной страницы.\n\nВсегда отдаёт объект с ключом ``contest``, который равен ``null``, если\nактивного контеста нет: это состояние «Сейчас нет активного контеста».\nОбёртка, а не голый ``null``, по двум причинам — DRF рендерит None пустым\nтелом без Content-Type, и в этот же ответ потом добавятся общие счётчики\nглавной, не ломая формат.",
+                "summary": "Контест на главной",
+                "tags": [
+                    "contests"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FeaturedContest"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/health/": {
+            "get": {
+                "operationId": "health_retrieve",
+                "description": "Проверка живости: приложение отвечает и база доступна.",
+                "summary": "Проверка состояния сервиса",
+                "tags": [
+                    "health"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "No response body"
+                    },
+                    "503": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/me/notify/": {
+            "post": {
+                "operationId": "me_notify_create",
+                "description": "Кнопка «Уведомить меня», когда активного контеста нет.",
+                "summary": "Подписаться на анонсы",
+                "tags": [
+                    "me"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "me_notify_destroy",
+                "description": "Кнопка «Уведомить меня», когда активного контеста нет.",
+                "summary": "Отписаться от анонсов",
+                "tags": [
+                    "me"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/me/submissions/": {
+            "get": {
+                "operationId": "me_submissions_list",
+                "description": "История заявок для своего профиля.",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "me"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedProfileSubmissionList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/users/{username}/": {
+            "get": {
+                "operationId": "users_retrieve",
+                "description": "Публичный профиль участника.\n\nЖивёт в этом приложении, а не в users: почти всё содержимое — история\nзаявок, и так users не приходится зависеть от submissions.",
+                "summary": "Профиль участника",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "username",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "users"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PublicProfile"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "AdminContest": {
+                "type": "object",
+                "description": "Создание и редактирование контеста админом.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "number": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "title": "Номер"
+                    },
+                    "display_number": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "slug": {
+                        "type": "string",
+                        "title": "Адрес",
+                        "maxLength": 220,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "title": {
+                        "type": "string",
+                        "title": "Название",
+                        "maxLength": 200
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "Описание"
+                    },
+                    "requirements": {
+                        "title": "Требования"
+                    },
+                    "prize_pool": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "title": "Призовой фонд"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "title": "Валюта",
+                        "maxLength": 3
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "title": "Начало"
+                    },
+                    "deadline": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Дедлайн"
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ContestStatusEnum"
+                            }
+                        ],
+                        "title": "Статус"
+                    },
+                    "state": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ContestStateEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "is_featured": {
+                        "type": "boolean",
+                        "title": "Показывать на главной"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "Создан"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "Обновлён"
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "deadline",
+                    "display_number",
+                    "id",
+                    "number",
+                    "state",
+                    "title",
+                    "updated_at"
+                ]
+            },
+            "AdminContestRequest": {
+                "type": "object",
+                "description": "Создание и редактирование контеста админом.",
+                "properties": {
+                    "slug": {
+                        "type": "string",
+                        "title": "Адрес",
+                        "maxLength": 220,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "title": "Название",
+                        "maxLength": 200
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "Описание"
+                    },
+                    "requirements": {
+                        "title": "Требования"
+                    },
+                    "prize_pool": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "title": "Призовой фонд"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "minLength": 1,
+                        "title": "Валюта",
+                        "maxLength": 3
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "title": "Начало"
+                    },
+                    "deadline": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Дедлайн"
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ContestStatusEnum"
+                            }
+                        ],
+                        "title": "Статус"
+                    },
+                    "is_featured": {
+                        "type": "boolean",
+                        "title": "Показывать на главной"
+                    }
+                },
+                "required": [
+                    "deadline",
+                    "title"
+                ]
+            },
+            "AdminStats": {
+                "type": "object",
+                "description": "Четыре плитки на админ-панели.",
+                "properties": {
+                    "total_users": {
+                        "type": "integer"
+                    },
+                    "active_contests": {
+                        "type": "integer"
+                    },
+                    "submissions": {
+                        "type": "integer"
+                    },
+                    "pending_review": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "active_contests",
+                    "pending_review",
+                    "submissions",
+                    "total_users"
+                ]
+            },
+            "AdminSubmissionDetail": {
+                "type": "object",
+                "description": "Экран проверки: здесь оценка и внутренние заметки уже видны.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "username": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "telegram_username": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "contest_title": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "contest_slug": {
+                        "type": "string",
+                        "readOnly": true,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "github_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "readOnly": true,
+                        "title": "Репозиторий GitHub"
+                    },
+                    "live_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "readOnly": true,
+                        "title": "Живая демонстрация"
+                    },
+                    "video_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "readOnly": true,
+                        "title": "Демо-видео"
+                    },
+                    "description": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Описание"
+                    },
+                    "repo_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SubmissionStatusEnum"
+                            }
+                        ],
+                        "readOnly": true,
+                        "title": "Статус"
+                    },
+                    "display_status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DisplayStatusEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "score": {
+                        "type": "integer",
+                        "maximum": 100,
+                        "minimum": 0,
+                        "nullable": true,
+                        "title": "Оценка"
+                    },
+                    "reviewer_notes": {
+                        "type": "string",
+                        "title": "Заметки проверяющего"
+                    },
+                    "is_winner": {
+                        "type": "boolean",
+                        "title": "Победитель"
+                    },
+                    "reviewed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true,
+                        "title": "Проверено"
+                    },
+                    "submitted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true,
+                        "title": "Отправлено"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "Создана"
+                    }
+                },
+                "required": [
+                    "contest_slug",
+                    "contest_title",
+                    "created_at",
+                    "description",
+                    "display_status",
+                    "github_url",
+                    "id",
+                    "live_url",
+                    "repo_name",
+                    "reviewed_at",
+                    "status",
+                    "submitted_at",
+                    "telegram_username",
+                    "username",
+                    "video_url"
+                ]
+            },
+            "AdminSubmissionEnvelope": {
+                "type": "object",
+                "description": "Заявка вместе с навигацией по очереди проверки.",
+                "properties": {
+                    "submission": {
+                        "$ref": "#/components/schemas/AdminSubmissionDetail"
+                    },
+                    "navigation": {
+                        "$ref": "#/components/schemas/Navigation"
+                    }
+                },
+                "required": [
+                    "navigation",
+                    "submission"
+                ]
+            },
+            "AdminSubmissionList": {
+                "type": "object",
+                "description": "Строка в списке заявок админки.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "username": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "contest_title": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "contest_slug": {
+                        "type": "string",
+                        "readOnly": true,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "repo_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SubmissionStatusEnum"
+                            }
+                        ],
+                        "readOnly": true,
+                        "title": "Статус"
+                    },
+                    "display_status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DisplayStatusEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "score": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true,
+                        "title": "Оценка"
+                    },
+                    "is_winner": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "title": "Победитель"
+                    },
+                    "submitted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true,
+                        "title": "Отправлено"
+                    }
+                },
+                "required": [
+                    "contest_slug",
+                    "contest_title",
+                    "display_status",
+                    "id",
+                    "is_winner",
+                    "repo_name",
+                    "score",
+                    "status",
+                    "submitted_at",
+                    "username"
+                ]
+            },
+            "AdminUser": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "username": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Имя пользователя",
+                        "description": "Обязательное поле. Не более 150 символов. Только буквы, цифры и символы @/./+/-/_."
+                    },
+                    "telegram_id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "telegram_username": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Username в Telegram"
+                    },
+                    "first_name": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Имя"
+                    },
+                    "last_name": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Фамилия"
+                    },
+                    "is_staff": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "title": "Статус персонала",
+                        "description": "Отметьте, если пользователь может входить в административную часть сайта."
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "title": "Активный",
+                        "description": "Отметьте, если пользователь должен считаться активным. Уберите эту отметку вместо удаления учётной записи."
+                    },
+                    "submissions_count": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "wins_count": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "Создан"
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "first_name",
+                    "id",
+                    "is_active",
+                    "is_staff",
+                    "last_name",
+                    "submissions_count",
+                    "telegram_id",
+                    "telegram_username",
+                    "username",
+                    "wins_count"
+                ]
+            },
+            "AuthExchangeRequestRequest": {
+                "type": "object",
+                "properties": {
+                    "nonce": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64
+                    },
+                    "client_secret": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64
+                    }
+                },
+                "required": [
+                    "client_secret",
+                    "nonce"
+                ]
+            },
+            "AuthStartResponse": {
+                "type": "object",
+                "properties": {
+                    "nonce": {
+                        "type": "string"
+                    },
+                    "client_secret": {
+                        "type": "string"
+                    },
+                    "deep_link": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "expires_in": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "client_secret",
+                    "deep_link",
+                    "expires_at",
+                    "expires_in",
+                    "nonce"
+                ]
+            },
+            "AuthStatusResponse": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "status"
+                ]
+            },
+            "ContestDetail": {
+                "type": "object",
+                "description": "Карточка контеста в списке и на главной.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "number": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "title": "Номер"
+                    },
+                    "display_number": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "slug": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Адрес",
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "title": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Название"
+                    },
+                    "description": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Описание"
+                    },
+                    "prize_pool": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "readOnly": true,
+                        "title": "Призовой фонд"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Валюта"
+                    },
+                    "deadline": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "Дедлайн"
+                    },
+                    "seconds_left": {
+                        "type": "integer",
+                        "description": "Сколько секунд осталось до дедлайна.\n\nОтдаём числом, а не строкой: обратный отсчёт на фронтенде тикает сам,\nи ему не нужно доверять часам на устройстве пользователя.",
+                        "readOnly": true
+                    },
+                    "participants_count": {
+                        "type": "integer",
+                        "description": "Число участников: черновики не считаются участием.\n\nЗначение берётся из аннотации, если вьюха её сделала, иначе\nсчитается запросом — чтобы сериализатор работал и вне списка.",
+                        "readOnly": true
+                    },
+                    "state": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ContestStateEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "requirements": {
+                        "readOnly": true,
+                        "title": "Требования"
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true,
+                        "title": "Начало"
+                    },
+                    "accepts_submissions": {
+                        "type": "boolean",
+                        "description": "Можно ли сейчас присылать и править решения.",
+                        "readOnly": true
+                    },
+                    "my_submission": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/MySubmission"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "Создан"
+                    }
+                },
+                "required": [
+                    "accepts_submissions",
+                    "created_at",
+                    "currency",
+                    "deadline",
+                    "description",
+                    "display_number",
+                    "id",
+                    "my_submission",
+                    "number",
+                    "participants_count",
+                    "prize_pool",
+                    "requirements",
+                    "seconds_left",
+                    "slug",
+                    "starts_at",
+                    "state",
+                    "title"
+                ]
+            },
+            "ContestList": {
+                "type": "object",
+                "description": "Карточка контеста в списке и на главной.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "number": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "title": "Номер"
+                    },
+                    "display_number": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "slug": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Адрес",
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "title": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Название"
+                    },
+                    "description": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Описание"
+                    },
+                    "prize_pool": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "readOnly": true,
+                        "title": "Призовой фонд"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Валюта"
+                    },
+                    "deadline": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "Дедлайн"
+                    },
+                    "seconds_left": {
+                        "type": "integer",
+                        "description": "Сколько секунд осталось до дедлайна.\n\nОтдаём числом, а не строкой: обратный отсчёт на фронтенде тикает сам,\nи ему не нужно доверять часам на устройстве пользователя.",
+                        "readOnly": true
+                    },
+                    "participants_count": {
+                        "type": "integer",
+                        "description": "Число участников: черновики не считаются участием.\n\nЗначение берётся из аннотации, если вьюха её сделала, иначе\nсчитается запросом — чтобы сериализатор работал и вне списка.",
+                        "readOnly": true
+                    },
+                    "state": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ContestStateEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "currency",
+                    "deadline",
+                    "description",
+                    "display_number",
+                    "id",
+                    "number",
+                    "participants_count",
+                    "prize_pool",
+                    "seconds_left",
+                    "slug",
+                    "state",
+                    "title"
+                ]
+            },
+            "ContestStateEnum": {
+                "enum": [
+                    "draft",
+                    "live",
+                    "ended",
+                    "archived"
+                ],
+                "type": "string",
+                "description": "* `draft` - черновик\n* `live` - идёт\n* `ended` - завершён\n* `archived` - в архиве"
+            },
+            "ContestStatusEnum": {
+                "enum": [
+                    "draft",
+                    "published",
+                    "archived"
+                ],
+                "type": "string",
+                "description": "* `draft` - черновик\n* `published` - опубликован\n* `archived` - в архиве"
+            },
+            "DisplayStatusEnum": {
+                "enum": [
+                    "draft",
+                    "submitted",
+                    "reviewed",
+                    "winner"
+                ],
+                "type": "string",
+                "description": "* `draft` - черновик\n* `submitted` - отправлено\n* `reviewed` - проверено\n* `winner` - победитель"
+            },
+            "FeaturedContest": {
+                "type": "object",
+                "description": "Ответ главной страницы; contest равен null, когда ничего не идёт.",
+                "properties": {
+                    "contest": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ContestDetail"
+                            }
+                        ],
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "contest"
+                ]
+            },
+            "MySubmission": {
+                "type": "object",
+                "description": "Своя заявка глазами участника.\n\nНи ``score``, ни ``reviewer_notes`` тут нет и быть не должно: на макете\nпроверки заметки прямо помечены как невидимые для участника.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "contest_title": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "contest_slug": {
+                        "type": "string",
+                        "readOnly": true,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "github_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "title": "Репозиторий GitHub",
+                        "maxLength": 200
+                    },
+                    "live_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "title": "Живая демонстрация",
+                        "maxLength": 200
+                    },
+                    "video_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "title": "Демо-видео",
+                        "maxLength": 200
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "Описание",
+                        "maxLength": 500
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SubmissionStatusEnum"
+                            }
+                        ],
+                        "readOnly": true,
+                        "title": "Статус"
+                    },
+                    "display_status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DisplayStatusEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "is_editable": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "submitted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true,
+                        "title": "Отправлено"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "Создана"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "Обновлена"
+                    }
+                },
+                "required": [
+                    "contest_slug",
+                    "contest_title",
+                    "created_at",
+                    "display_status",
+                    "id",
+                    "is_editable",
+                    "status",
+                    "submitted_at",
+                    "updated_at"
+                ]
+            },
+            "MySubmissionEnvelope": {
+                "type": "object",
+                "description": "submission равен null, если участник ещё ничего не отправлял.",
+                "properties": {
+                    "submission": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/MySubmission"
+                            }
+                        ],
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "submission"
+                ]
+            },
+            "MySubmissionRequest": {
+                "type": "object",
+                "description": "Своя заявка глазами участника.\n\nНи ``score``, ни ``reviewer_notes`` тут нет и быть не должно: на макете\nпроверки заметки прямо помечены как невидимые для участника.",
+                "properties": {
+                    "github_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "title": "Репозиторий GitHub",
+                        "maxLength": 200
+                    },
+                    "live_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "title": "Живая демонстрация",
+                        "maxLength": 200
+                    },
+                    "video_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "title": "Демо-видео",
+                        "maxLength": 200
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "Описание",
+                        "maxLength": 500
+                    }
+                }
+            },
+            "Navigation": {
+                "type": "object",
+                "description": "Счётчик «3 / 36» и стрелки на экране проверки.",
+                "properties": {
+                    "position": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "total": {
+                        "type": "integer"
+                    },
+                    "previous_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "next_id": {
+                        "type": "integer",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "next_id",
+                    "position",
+                    "previous_id",
+                    "total"
+                ]
+            },
+            "PaginatedAdminContestList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AdminContest"
+                        }
+                    }
+                }
+            },
+            "PaginatedAdminSubmissionListList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AdminSubmissionList"
+                        }
+                    }
+                }
+            },
+            "PaginatedAdminUserList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AdminUser"
+                        }
+                    }
+                }
+            },
+            "PaginatedContestListList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ContestList"
+                        }
+                    }
+                }
+            },
+            "PaginatedProfileSubmissionList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ProfileSubmission"
+                        }
+                    }
+                }
+            },
+            "PatchedAdminContestRequest": {
+                "type": "object",
+                "description": "Создание и редактирование контеста админом.",
+                "properties": {
+                    "slug": {
+                        "type": "string",
+                        "title": "Адрес",
+                        "maxLength": 220,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "title": "Название",
+                        "maxLength": 200
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "Описание"
+                    },
+                    "requirements": {
+                        "title": "Требования"
+                    },
+                    "prize_pool": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "title": "Призовой фонд"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "minLength": 1,
+                        "title": "Валюта",
+                        "maxLength": 3
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "title": "Начало"
+                    },
+                    "deadline": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Дедлайн"
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ContestStatusEnum"
+                            }
+                        ],
+                        "title": "Статус"
+                    },
+                    "is_featured": {
+                        "type": "boolean",
+                        "title": "Показывать на главной"
+                    }
+                }
+            },
+            "PatchedAdminSubmissionDetailRequest": {
+                "type": "object",
+                "description": "Экран проверки: здесь оценка и внутренние заметки уже видны.",
+                "properties": {
+                    "score": {
+                        "type": "integer",
+                        "maximum": 100,
+                        "minimum": 0,
+                        "nullable": true,
+                        "title": "Оценка"
+                    },
+                    "reviewer_notes": {
+                        "type": "string",
+                        "title": "Заметки проверяющего"
+                    },
+                    "is_winner": {
+                        "type": "boolean",
+                        "title": "Победитель"
+                    }
+                }
+            },
+            "ProfileSubmission": {
+                "type": "object",
+                "description": "Строка истории на странице профиля.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "contest_title": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "contest_slug": {
+                        "type": "string",
+                        "readOnly": true,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "repo_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "display_status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DisplayStatusEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "submitted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true,
+                        "title": "Отправлено"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "Создана"
+                    }
+                },
+                "required": [
+                    "contest_slug",
+                    "contest_title",
+                    "created_at",
+                    "display_status",
+                    "id",
+                    "repo_name",
+                    "submitted_at"
+                ]
+            },
+            "PublicProfile": {
+                "type": "object",
+                "description": "Страница профиля участника.",
+                "properties": {
+                    "user": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    },
+                    "submissions_count": {
+                        "type": "integer"
+                    },
+                    "wins_count": {
+                        "type": "integer"
+                    },
+                    "submissions": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ProfileSubmission"
+                        }
+                    }
+                },
+                "required": [
+                    "submissions",
+                    "submissions_count",
+                    "user",
+                    "wins_count"
+                ]
+            },
+            "SubmissionStatusEnum": {
+                "enum": [
+                    "draft",
+                    "submitted",
+                    "reviewed"
+                ],
+                "type": "string",
+                "description": "* `draft` - черновик\n* `submitted` - отправлено\n* `reviewed` - проверено"
+            },
+            "User": {
+                "type": "object",
+                "description": "Профиль текущего пользователя.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "username": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Имя пользователя",
+                        "description": "Обязательное поле. Не более 150 символов. Только буквы, цифры и символы @/./+/-/_."
+                    },
+                    "display_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "telegram_username": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Username в Telegram"
+                    },
+                    "first_name": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Имя"
+                    },
+                    "last_name": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Фамилия"
+                    },
+                    "photo_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "readOnly": true,
+                        "title": "Аватар"
+                    },
+                    "is_admin": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "notify_opt_in": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "title": "Уведомлять о новых контестах"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "Создан"
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "display_name",
+                    "first_name",
+                    "id",
+                    "is_admin",
+                    "last_name",
+                    "notify_opt_in",
+                    "photo_url",
+                    "telegram_username",
+                    "username"
+                ]
+            }
+        },
+        "securitySchemes": {
+            "cookieAuth": {
+                "type": "apiKey",
+                "in": "cookie",
+                "name": "cc_access",
+                "description": "JWT в httpOnly-куке. Ставится на /api/auth/telegram/exchange/."
+            }
+        }
+    }
+}

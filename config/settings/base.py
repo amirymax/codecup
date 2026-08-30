@@ -149,6 +149,14 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
+    # Поле status есть и у контеста, и у заявки — без явных имён схема
+    # выдаёт что-то вроде Status35aEnum, и типы фронтенда становятся нечитаемыми.
+    "ENUM_NAME_OVERRIDES": {
+        "ContestStatusEnum": "apps.contests.models.ContestStatus.choices",
+        "ContestStateEnum": "apps.contests.models.ContestState.choices",
+        "SubmissionStatusEnum": "apps.submissions.models.SubmissionStatus.choices",
+        "DisplayStatusEnum": "apps.submissions.models.DisplayStatus.choices",
+    },
 }
 
 CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS")

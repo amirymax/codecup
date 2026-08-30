@@ -2,11 +2,22 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from .models import GITHUB_URL, MAX_DESCRIPTION_LENGTH, MAX_SCORE, Submission, SubmissionStatus
+from apps.common.serializers import NavigationSerializer
+
+from .models import (
+    GITHUB_URL,
+    MAX_DESCRIPTION_LENGTH,
+    MAX_SCORE,
+    DisplayStatus,
+    Submission,
+    SubmissionStatus,
+)
 
 
 class _BaseSubmissionSerializer(serializers.ModelSerializer):
-    display_status = serializers.CharField(read_only=True)
+    # ChoiceField даёт в схеме перечисление — на фронтенде это четыре бейджа
+    # из макета, а не произвольная строка.
+    display_status = serializers.ChoiceField(choices=DisplayStatus.choices, read_only=True)
     contest_title = serializers.CharField(source="contest.title", read_only=True)
     contest_slug = serializers.SlugField(source="contest.slug", read_only=True)
 
@@ -167,3 +178,25 @@ class AdminSubmissionDetailSerializer(_BaseSubmissionSerializer):
         if value is not None and not 0 <= value <= MAX_SCORE:
             raise serializers.ValidationError(f"Оценка должна быть от 0 до {MAX_SCORE}.")
         return value
+
+
+class MySubmissionEnvelopeSerializer(serializers.Serializer):
+    """submission равен null, если участник ещё ничего не отправлял."""
+
+    submission = MySubmissionSerializer(allow_null=True)
+
+
+class PublicProfileSerializer(serializers.Serializer):
+    """Страница профиля участника."""
+
+    user = serializers.DictField()
+    submissions_count = serializers.IntegerField()
+    wins_count = serializers.IntegerField()
+    submissions = ProfileSubmissionSerializer(many=True)
+
+
+class AdminSubmissionEnvelopeSerializer(serializers.Serializer):
+    """Заявка вместе с навигацией по очереди проверки."""
+
+    submission = AdminSubmissionDetailSerializer()
+    navigation = NavigationSerializer()
