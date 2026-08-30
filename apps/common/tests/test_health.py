@@ -28,12 +28,14 @@ def test_health_reports_503_when_database_is_unreachable(client: APIClient, monk
     assert response.json() == {"status": "degraded", "database": "unavailable"}
 
 
+@pytest.mark.django_db
 def test_openapi_schema_is_generated(client: APIClient) -> None:
     response = client.get(reverse("schema"))
 
     assert response.status_code == 200
 
 
+@pytest.mark.django_db
 def test_unknown_api_path_returns_the_json_error_envelope(client: APIClient) -> None:
     response = client.get("/api/does-not-exist/")
 
@@ -41,5 +43,6 @@ def test_unknown_api_path_returns_the_json_error_envelope(client: APIClient) -> 
     assert response.json()["error"]["code"] == "not_found"
 
 
+@pytest.mark.django_db
 def test_unknown_non_api_path_is_left_to_django(client: APIClient) -> None:
     assert client.get("/does-not-exist/").status_code == 404

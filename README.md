@@ -34,3 +34,60 @@ make run                      # http://127.0.0.1:8000
 
 Команды: `make help`. Тесты — `make test`, стиль — `make lint` и `make format`,
 пересоздать базу с нуля — `make reset-db`.
+
+---
+
+## Вход через Telegram
+
+Аутентификация устроена так: сайт выдаёт одноразовый код, пользователь
+подтверждает вход в боте, сайт обменивает код на сессию в httpOnly-куках.
+
+```
+Браузер                     Backend                      Telegram
+  │ POST /api/auth/telegram/start/ │
+  │◀── nonce + client_secret ──────│
+  │ открывает t.me/<бот>?start=<nonce> ────────────────────▶│
+  │                                │◀── вебхук /start <nonce>│
+  │                                │─ «Подтвердить вход?» ──▶│
+  │ опрос status/ раз в 2 сек      │                         │
+  │                                │◀── нажата кнопка ───────│
+  │◀── {"status":"confirmed"} ─────│
+  │ POST exchange/ {nonce, client_secret}                    │
+  │◀── Set-Cookie: cc_access, cc_refresh ──                  │
+```
+
+`nonce` проходит через Telegram открытым текстом, поэтому сам по себе он
+сессию не даёт: обменять его можно только вместе с `client_secret`, который
+остался в браузере. Код одноразовый и живёт 5 минут — по истечении срока
+экран входа показывает «Ссылка устарела».
+
+### Настройка бота локально
+
+1. Получите токен у [@BotFather](https://t.me/BotFather) и впишите в `.env`
+   `TELEGRAM_BOT_TOKEN` и `TELEGRAM_BOT_USERNAME`.
+2. Придумайте `TELEGRAM_WEBHOOK_SECRET` — любая случайная строка.
+3. Поднимите туннель, чтобы Telegram достучался до localhost:
+
+   ```bash
+   cloudflared tunnel --url http://localhost:8000
+   ```
+
+4. Зарегистрируйте вебхук на выданный адрес:
+
+   ```bash
+   .venv/bin/python manage.py set_webhook https://ваш-туннель.trycloudflare.com
+   ```
+
+Снять вебхук — `manage.py delete_webhook`. Тесты бота не ходят в сеть и
+проходят без токена.
+
+### Эндпоинты авторизации
+
+| Метод | Адрес | Назначение |
+|---|---|---|
+| POST | `/api/auth/telegram/start/` | выдать код и ссылку на бота |
+| GET | `/api/auth/telegram/status/?nonce=` | статус подтверждения (опрос) |
+| POST | `/api/auth/telegram/exchange/` | обменять код на сессию |
+| POST | `/api/auth/refresh/` | обновить сессию |
+| POST | `/api/auth/logout/` | выйти |
+| GET | `/api/auth/me/` | текущий пользователь |
