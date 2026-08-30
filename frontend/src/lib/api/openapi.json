@@ -2379,8 +2379,7 @@
                 "description": "Страница профиля участника.",
                 "properties": {
                     "user": {
-                        "type": "object",
-                        "additionalProperties": {}
+                        "$ref": "#/components/schemas/User"
                     },
                     "submissions_count": {
                         "type": "integer"

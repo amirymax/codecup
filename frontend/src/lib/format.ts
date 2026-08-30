@@ -5,9 +5,10 @@ const MONTHS_SHORT = [
   "июл", "авг", "сен", "окт", "ноя", "дек",
 ];
 
-const MONTHS_FULL = [
-  "января", "февраля", "марта", "апреля", "мая", "июня",
-  "июля", "августа", "сентября", "октября", "ноября", "декабря",
+/** Именительный падеж — для строк вида «август 2026». */
+const MONTHS_NOMINATIVE = [
+  "январь", "февраль", "март", "апрель", "май", "июнь",
+  "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь",
 ];
 
 /** «5 000 $» — призовой фонд как на макете. */
@@ -27,10 +28,16 @@ export function formatShortDate(iso: string): string {
   return `${date.getDate()} ${MONTHS_SHORT[date.getMonth()]}`;
 }
 
-/** «июнь 2026» — для строки «Присоединился через Telegram». */
+/**
+ * «июнь 2026» — для строки «Присоединился через Telegram».
+ *
+ * Именительный падеж берётся из отдельного списка: получить его из
+ * родительного отбрасыванием окончания нельзя — «августа» так не
+ * превращается в «август».
+ */
 export function formatMonthYear(iso: string): string {
   const date = new Date(iso);
-  return `${MONTHS_FULL[date.getMonth()].replace(/я$/, "ь")} ${date.getFullYear()}`;
+  return `${MONTHS_NOMINATIVE[date.getMonth()]} ${date.getFullYear()}`;
 }
 
 export function formatDateTime(iso: string): string {

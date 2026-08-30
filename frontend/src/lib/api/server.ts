@@ -13,6 +13,7 @@ import { ApiRequestError } from "./errors";
 import type {
   ContestDetail,
   FeaturedContest,
+  MySubmission,
   Paginated,
   ProfileSubmission,
   PublicProfile,
@@ -51,6 +52,22 @@ export async function getMySubmissions(): Promise<Paginated<ProfileSubmission>> 
   return api.get<Paginated<ProfileSubmission>>("/api/me/submissions/", {
     cookie: await cookieHeader(),
   });
+}
+
+/** Своя заявка на контест; submission равен null, если её ещё нет. */
+export async function getMySubmission(slug: string): Promise<MySubmission | null> {
+  try {
+    const data = await api.get<{ submission: MySubmission | null }>(
+      `/api/contests/${slug}/submission/`,
+      { cookie: await cookieHeader() },
+    );
+    return data.submission;
+  } catch (error) {
+    if (error instanceof ApiRequestError && error.isUnauthorized) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function getPublicProfile(username: string): Promise<PublicProfile> {

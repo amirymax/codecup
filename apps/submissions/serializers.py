@@ -3,6 +3,7 @@ from __future__ import annotations
 from rest_framework import serializers
 
 from apps.common.serializers import NavigationSerializer
+from apps.users.serializers import UserSerializer
 
 from .models import (
     GITHUB_URL,
@@ -189,7 +190,9 @@ class MySubmissionEnvelopeSerializer(serializers.Serializer):
 class PublicProfileSerializer(serializers.Serializer):
     """Страница профиля участника."""
 
-    user = serializers.DictField()
+    # Именно UserSerializer, а не DictField: иначе в схеме у поля нет
+    # структуры и на фронтенде profile.user приходит как unknown.
+    user = UserSerializer()
     submissions_count = serializers.IntegerField()
     wins_count = serializers.IntegerField()
     submissions = ProfileSubmissionSerializer(many=True)

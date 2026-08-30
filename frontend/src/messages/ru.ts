@@ -126,6 +126,7 @@ export const profile = {
   submissionsLabel: "Заявки",
   winsLabel: "Победы",
   mySubmissions: "Мои заявки",
+  theirSubmissions: "Заявки",
   emptyTitle: "Пока нет заявок",
   emptyDesc: "Присоединитесь к активному контесту и отправьте проект, чтобы увидеть его здесь.",
   browseContests: "Смотреть контесты",
