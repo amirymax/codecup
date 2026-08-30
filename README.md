@@ -236,3 +236,17 @@ Tailwind называются по смыслу — `bg-ink`, `bg-surface`, `bor
 > `SameSite=Lax` не уйдёт. Локально это `localhost:3000` и `localhost:8000`
 > (не смешивайте с `127.0.0.1`), в проде — общий домен вида `codecup.tech`
 > и `api.codecup.tech` с `AUTH_COOKIE_DOMAIN=.codecup.tech`.
+
+---
+
+## Продакшн
+
+Backend, фронтенд и nginx работают в контейнерах, **Postgres — на сервере**:
+так база переживает пересборку приложения и не зависит от Docker-томов.
+
+```bash
+cd /opt/codecup && ./deploy/deploy.sh
+```
+
+Полная инструкция — [deploy/README.md](deploy/README.md): установка с нуля,
+сертификаты, регистрация вебхука, бэкапы и разбор типичных сбоев.
