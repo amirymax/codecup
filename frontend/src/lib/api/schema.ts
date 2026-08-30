@@ -476,8 +476,7 @@ export interface components {
             title: string;
             /** Описание */
             description?: string;
-            /** Требования */
-            requirements?: unknown;
+            requirements?: string[];
             /**
              * Призовой фонд
              * Format: decimal
@@ -519,8 +518,7 @@ export interface components {
             title: string;
             /** Описание */
             description?: string;
-            /** Требования */
-            requirements?: unknown;
+            requirements?: string[];
             /**
              * Призовой фонд
              * Format: decimal
@@ -712,8 +710,7 @@ export interface components {
              */
             readonly participants_count: number;
             readonly state: components["schemas"]["ContestStateEnum"];
-            /** Требования */
-            readonly requirements: unknown;
+            readonly requirements: string[];
             /**
              * Начало
              * Format: date-time
@@ -961,8 +958,7 @@ export interface components {
             title?: string;
             /** Описание */
             description?: string;
-            /** Требования */
-            requirements?: unknown;
+            requirements?: string[];
             /**
              * Призовой фонд
              * Format: decimal

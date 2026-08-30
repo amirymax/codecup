@@ -6,7 +6,13 @@ from rest_framework import serializers
 
 from apps.submissions.serializers import MySubmissionSerializer
 
-from .models import Contest, ContestState, ContestStatus, validate_requirements
+from .models import (
+    MAX_REQUIREMENT_LENGTH,
+    Contest,
+    ContestState,
+    ContestStatus,
+    validate_requirements,
+)
 
 
 class ContestListSerializer(serializers.ModelSerializer):
@@ -58,6 +64,9 @@ class ContestListSerializer(serializers.ModelSerializer):
 
 
 class ContestDetailSerializer(ContestListSerializer):
+    # Без явного объявления JSONField попадает в схему как «что угодно»,
+    # и на фронтенде requirements оказывается unknown вместо string[].
+    requirements = serializers.ListField(child=serializers.CharField(), read_only=True)
     my_submission = serializers.SerializerMethodField()
 
     class Meta(ContestListSerializer.Meta):
@@ -89,6 +98,11 @@ class ContestDetailSerializer(ContestListSerializer):
 class AdminContestSerializer(serializers.ModelSerializer):
     """Создание и редактирование контеста админом."""
 
+    requirements = serializers.ListField(
+        child=serializers.CharField(max_length=MAX_REQUIREMENT_LENGTH),
+        allow_empty=True,
+        required=False,
+    )
     state = serializers.ChoiceField(choices=ContestState.choices, read_only=True)
     display_number = serializers.CharField(read_only=True)
 

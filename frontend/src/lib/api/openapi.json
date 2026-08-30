@@ -1149,7 +1149,11 @@
                         "title": "Описание"
                     },
                     "requirements": {
-                        "title": "Требования"
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 300
+                        }
                     },
                     "prize_pool": {
                         "type": "string",
@@ -1238,7 +1242,12 @@
                         "title": "Описание"
                     },
                     "requirements": {
-                        "title": "Требования"
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 300
+                        }
                     },
                     "prize_pool": {
                         "type": "string",
@@ -1720,8 +1729,11 @@
                         "readOnly": true
                     },
                     "requirements": {
-                        "readOnly": true,
-                        "title": "Требования"
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "readOnly": true
                     },
                     "starts_at": {
                         "type": "string",
@@ -2244,7 +2256,12 @@
                         "title": "Описание"
                     },
                     "requirements": {
-                        "title": "Требования"
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 300
+                        }
                     },
                     "prize_pool": {
                         "type": "string",

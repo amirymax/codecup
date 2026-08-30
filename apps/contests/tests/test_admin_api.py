@@ -77,12 +77,26 @@ def test_requirements_are_trimmed(client: APIClient, admin) -> None:
     assert response.json()["requirements"] == ["Репозиторий GitHub", "Демо-ссылка"]
 
 
-@pytest.mark.parametrize("bad", [["  "], [42], "не список"])
+@pytest.mark.parametrize("bad", [["  "], "не список", [""], ["x" * 301]])
 def test_invalid_requirements_are_rejected(client: APIClient, admin, bad) -> None:
     response = client.post(reverse("admin-contest-list"), _payload(requirements=bad), format="json")
 
     assert response.status_code == 400
     assert "requirements" in response.json()["error"]["details"]
+
+
+def test_numeric_requirement_is_coerced_to_text(client: APIClient, admin) -> None:
+    """DRF приводит число к строке — это штатное поведение ListField.
+
+    Смысловые проверки (непустое, длина, количество) при этом сохраняются,
+    а «требование 42» админ увидит и поправит сам.
+    """
+    response = client.post(
+        reverse("admin-contest-list"), _payload(requirements=[42]), format="json"
+    )
+
+    assert response.status_code == 201
+    assert response.json()["requirements"] == ["42"]
 
 
 def test_a_draft_may_have_a_deadline_in_the_past(client: APIClient, admin) -> None:
