@@ -1,7 +1,7 @@
 PY := .venv/bin/python
 PIP := .venv/bin/pip
 
-.PHONY: help venv install up down logs psql migrate migrations run shell superuser schema front front-install front-build front-lint prod-build prod-up prod-logs prod-check test lint format check reset-db
+.PHONY: help venv install up down logs psql migrate migrations run bot shell superuser schema front front-install front-build front-lint prod-build prod-up prod-logs prod-check test lint format check reset-db
 
 help: ## Показать список команд
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -40,6 +40,9 @@ migrate: ## Применить миграции
 
 run: ## Запустить сервер разработки на :8000
 	$(PY) manage.py runserver 0.0.0.0:8000
+
+bot: ## Запустить Telegram-бота (длинный опрос)
+	$(PY) manage.py codebot
 
 shell: ## Django shell
 	$(PY) manage.py shell

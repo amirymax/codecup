@@ -69,8 +69,10 @@ make run                      # http://127.0.0.1:8000
 **Длинный опрос — для разработки.** Ничего, кроме токена, не нужно:
 
 ```bash
-python3 manage.py codebot
+make bot
 ```
+
+Без Makefile — то же самое: `.venv/bin/python manage.py codebot`
 
 Команда снимает вебхук (Telegram не отдаёт `getUpdates`, пока он висит),
 подключается к API и ждёт сообщений. Остановка — Ctrl+C. Флаги:
@@ -104,8 +106,10 @@ python3 manage.py codebot
 **Длинный опрос** (удобно локально, туннель не нужен):
 
 ```bash
-python3 manage.py codebot
+make bot
 ```
+
+Без Makefile — то же самое: `.venv/bin/python manage.py codebot`
 
 Команда сама снимает вебхук перед стартом: Telegram не отдаёт апдейты
 опросом, пока вебхук установлен, — отвечает 409. Чтобы оставить вебхук на
