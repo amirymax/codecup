@@ -192,3 +192,47 @@ make schema
 | GET | `/api/admin/users/` | список пользователей, `?search=` и `?is_staff=true` |
 
 Интерактивная документация — `/api/docs/`.
+
+---
+
+## Фронтенд
+
+Next.js 15 (App Router) + TypeScript + Tailwind 4 + shadcn/ui в каталоге
+`frontend/`. Интерфейс одноязычный: все тексты лежат в `src/messages/ru.ts`
+и взяты из словарей `ru` в макетах без изменений.
+
+```bash
+make front-install
+make front            # http://localhost:3000
+```
+
+Backend должен быть запущен на :8000 (`make run`).
+
+### Оформление
+
+Токены из макетов объявлены в `src/app/globals.css`: фон `#09090b`, зелёный
+акцент `#22c55e`, синий `#3b82f6`, шрифты Manrope и JetBrains Mono. Классы
+Tailwind называются по смыслу — `bg-ink`, `bg-surface`, `border-line-2`,
+`text-muted`.
+
+Компоненты shadcn/ui в `src/components/ui/` **перекрашены на эти токены**:
+стандартные `bg-primary` и подобные в тёмной палитре макетов не читаются.
+Структура каталога и утилита `cn` сохранены, поэтому `npx shadcn add …`
+по-прежнему работает — добавленный компонент нужно будет причесать под
+токены, как это уже сделано для кнопки и полей ввода.
+
+### Работа с API
+
+Сессия живёт в httpOnly-куке, поэтому запросы идут по-разному:
+
+- **серверные компоненты** — `src/lib/api/server.ts`, куки перекладываются
+  из входящего запроса через `next/headers`;
+- **браузер** — `src/lib/api/client.ts` с `credentials: "include"`.
+
+Типы берутся из сгенерированной схемы (`make schema`), псевдонимы — в
+`src/lib/api/types.ts`.
+
+> **Важно:** фронтенд и backend должны быть на одном хосте, иначе кука
+> `SameSite=Lax` не уйдёт. Локально это `localhost:3000` и `localhost:8000`
+> (не смешивайте с `127.0.0.1`), в проде — общий домен вида `codecup.tech`
+> и `api.codecup.tech` с `AUTH_COOKIE_DOMAIN=.codecup.tech`.

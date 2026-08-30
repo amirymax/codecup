@@ -1,0 +1,108 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Токены взяты напрямую из макетов CodeCup: тёмный интерфейс,
+   зелёный акцент действий и синий акцент ссылок и статусов. */
+@theme inline {
+  --color-ink: #09090b;          /* фон страницы */
+  --color-surface: #0d0d0f;      /* карточки */
+  --color-surface-2: #131316;    /* поля ввода, ховер */
+  --color-surface-3: #18181b;    /* бейджи, кнопки-призраки */
+  --color-surface-4: #27272a;    /* активный сегмент */
+
+  --color-line: #1f1f23;         /* тонкая граница */
+  --color-line-2: #26262b;       /* граница карточки */
+  --color-line-3: #3f3f46;       /* граница при наведении */
+
+  --color-text: #fafafa;
+  --color-text-2: #d4d4d8;
+  --color-muted: #a1a1aa;
+  --color-muted-2: #71717a;
+  --color-muted-3: #52525b;
+
+  --color-green: #22c55e;
+  --color-green-light: #4ade80;
+  --color-green-ink: #052e12;    /* текст на зелёной кнопке */
+
+  --color-blue: #3b82f6;
+  --color-blue-light: #60a5fa;
+  --color-blue-dark: #2563eb;
+  --color-blue-pale: #93c5fd;
+
+  --color-amber: #facc15;
+  --color-red: #f87171;
+  --color-red-dark: #7f1d1d;
+
+  --font-sans: var(--font-manrope), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  --radius-card: 14px;
+  --radius-control: 9px;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgb(34 197 94 / 0.3);
+}
+
+/* Поля ввода во всех формах ведут себя одинаково. */
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-muted-3);
+}
+
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  border-color: var(--color-blue);
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 0.15);
+}
+
+/* Скелетоны и индикаторы: те же анимации, что в макетах. */
+@keyframes cc-shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+@keyframes cc-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes cc-spin {
+  to { transform: rotate(360deg); }
+}
+
+.cc-skeleton {
+  background: linear-gradient(90deg, #17171a 0%, #1f1f24 50%, #17171a 100%);
+  background-size: 800px 100%;
+  animation: cc-shimmer 1.6s infinite linear;
+  border-radius: 8px;
+}
+
+/* Мягкие появления — в макетах указано «только лёгкие fade/slide». */
+@keyframes cc-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.cc-enter {
+  animation: cc-fade-up 0.28s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cc-enter,
+  .cc-skeleton {
+    animation: none;
+  }
+}
