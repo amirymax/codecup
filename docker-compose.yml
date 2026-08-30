@@ -1,0 +1,23 @@
+# Локальная разработка: в Docker живёт только Postgres.
+# Django запускается на хосте (make run), фронтенд — тоже (npm run dev).
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: codecup-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-codecup}
+      POSTGRES_USER: ${POSTGRES_USER:-codecup}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-codecup}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-codecup} -d ${POSTGRES_DB:-codecup}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
