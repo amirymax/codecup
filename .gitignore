@@ -31,3 +31,7 @@ htmlcov/
 .DS_Store
 .idea/
 .vscode/
+
+# Сгенерированные типы фронтенда (обновляются через make schema)
+!/frontend/src/lib/api/schema.ts
+!/frontend/src/lib/api/openapi.json
