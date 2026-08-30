@@ -11,12 +11,17 @@ import { cookies } from "next/headers";
 import { api } from "./client";
 import { ApiRequestError } from "./errors";
 import type {
+  AdminContest,
+  AdminStats,
+  AdminSubmission,
+  AdminSubmissionRow,
   ContestDetail,
   FeaturedContest,
   MySubmission,
   Paginated,
   ProfileSubmission,
   PublicProfile,
+  ReviewNavigation,
   User,
 } from "./types";
 
@@ -72,4 +77,37 @@ export async function getMySubmission(slug: string): Promise<MySubmission | null
 
 export async function getPublicProfile(username: string): Promise<PublicProfile> {
   return api.get<PublicProfile>(`/api/users/${username}/`, { cookie: await cookieHeader() });
+}
+
+// --- админка ---------------------------------------------------------------
+
+export async function getAdminStats(): Promise<AdminStats> {
+  return api.get<AdminStats>("/api/admin/stats/", { cookie: await cookieHeader() });
+}
+
+export async function getAdminContests(): Promise<Paginated<AdminContest>> {
+  return api.get<Paginated<AdminContest>>("/api/admin/contests/", {
+    cookie: await cookieHeader(),
+  });
+}
+
+export async function getAdminContest(id: string): Promise<AdminContest> {
+  return api.get<AdminContest>(`/api/admin/contests/${id}/`, { cookie: await cookieHeader() });
+}
+
+export async function getAdminSubmissions(
+  query: Record<string, string> = {},
+): Promise<Paginated<AdminSubmissionRow>> {
+  const search = new URLSearchParams(query).toString();
+  return api.get<Paginated<AdminSubmissionRow>>(
+    `/api/admin/submissions/${search ? `?${search}` : ""}`,
+    { cookie: await cookieHeader() },
+  );
+}
+
+export async function getAdminSubmission(id: string): Promise<{
+  submission: AdminSubmission;
+  navigation: ReviewNavigation;
+}> {
+  return api.get(`/api/admin/submissions/${id}/`, { cookie: await cookieHeader() });
 }
