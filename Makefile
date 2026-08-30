@@ -1,7 +1,7 @@
 PY := .venv/bin/python
 PIP := .venv/bin/pip
 
-.PHONY: help venv install up down logs psql migrate migrations run shell superuser schema front front-install front-build front-lint test lint format check reset-db
+.PHONY: help venv install up down logs psql migrate migrations run shell superuser schema front front-install front-build front-lint prod-build prod-up prod-logs prod-check test lint format check reset-db
 
 help: ## Показать список команд
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -62,6 +62,18 @@ front-build: ## Собрать фронтенд
 
 front-lint: ## Проверить фронтенд
 	cd frontend && npm run lint
+
+prod-build: ## Собрать продакшн-образы
+	docker compose -f docker-compose.prod.yml build
+
+prod-up: ## Поднять продакшн локально (нужен .env.prod)
+	docker compose -f docker-compose.prod.yml up -d
+
+prod-logs: ## Логи продакшна
+	docker compose -f docker-compose.prod.yml logs -f
+
+prod-check: ## Проверить настройки безопасности
+	$(PY) manage.py check --deploy --settings=config.settings.production
 
 test: ## Прогнать тесты
 	.venv/bin/pytest
