@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics, status
@@ -15,6 +16,13 @@ from .serializers import (
     ContestListSerializer,
     FeaturedContestSerializer,
 )
+
+
+def _participants_count():
+    """Аннотация счётчика участников: черновики не в счёт."""
+    from apps.submissions.models import SubmissionStatus
+
+    return Count("submissions", filter=~Q(submissions__status=SubmissionStatus.DRAFT))
 
 
 class ContestListView(generics.ListAPIView):
@@ -38,8 +46,10 @@ class ContestListView(generics.ListAPIView):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        return Contest.objects.by_state(self.request.query_params.get("state")).order_by(
-            "-is_featured", "-deadline"
+        return (
+            Contest.objects.by_state(self.request.query_params.get("state"))
+            .annotate(participants_count=_participants_count())
+            .order_by("-is_featured", "-deadline")
         )
 
 
@@ -61,8 +71,10 @@ class FeaturedContestView(APIView):
             Contest.objects.live().filter(is_featured=True).first()
             or Contest.objects.live().order_by("deadline").first()
         )
-        payload = {"contest": ContestDetailSerializer(contest).data if contest else None}
-        return Response(payload)
+        serialized = (
+            ContestDetailSerializer(contest, context={"request": request}).data if contest else None
+        )
+        return Response({"contest": serialized})
 
 
 class ContestDetailView(generics.RetrieveAPIView):

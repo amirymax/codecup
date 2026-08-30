@@ -12,6 +12,7 @@ class ContestListSerializer(serializers.ModelSerializer):
     state = serializers.CharField(read_only=True)
     display_number = serializers.CharField(read_only=True)
     seconds_left = serializers.SerializerMethodField()
+    participants_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Contest
@@ -26,9 +27,21 @@ class ContestListSerializer(serializers.ModelSerializer):
             "currency",
             "deadline",
             "seconds_left",
+            "participants_count",
             "state",
         ]
         read_only_fields = fields
+
+    def get_participants_count(self, contest: Contest) -> int:
+        """Число участников: черновики не считаются участием.
+
+        Значение берётся из аннотации, если вьюха её сделала, иначе
+        считается запросом — чтобы сериализатор работал и вне списка.
+        """
+        annotated = getattr(contest, "participants_count", None)
+        if annotated is not None:
+            return annotated
+        return contest.submissions.counted().count()
 
     def get_seconds_left(self, contest: Contest) -> int:
         """Сколько секунд осталось до дедлайна.
@@ -40,15 +53,33 @@ class ContestListSerializer(serializers.ModelSerializer):
 
 
 class ContestDetailSerializer(ContestListSerializer):
+    my_submission = serializers.SerializerMethodField()
+
     class Meta(ContestListSerializer.Meta):
         fields = [
             *ContestListSerializer.Meta.fields,
             "requirements",
             "starts_at",
             "accepts_submissions",
+            "my_submission",
             "created_at",
         ]
         read_only_fields = fields
+
+    def get_my_submission(self, contest: Contest):
+        """Своя заявка, если пользователь вошёл.
+
+        Экран контеста меняет кнопку на «Редактировать заявку», когда решение
+        уже отправлено, поэтому страница должна знать об этом сразу.
+        """
+        from apps.submissions.serializers import MySubmissionSerializer
+
+        request = self.context.get("request")
+        if request is None or not request.user.is_authenticated:
+            return None
+
+        submission = contest.submissions.filter(user=request.user).first()
+        return MySubmissionSerializer(submission).data if submission else None
 
 
 class AdminContestSerializer(serializers.ModelSerializer):
