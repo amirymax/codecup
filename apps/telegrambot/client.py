@@ -28,12 +28,23 @@ class TelegramClient:
     def is_configured(self) -> bool:
         return bool(self.token)
 
-    def call(self, method: str, **payload: Any) -> dict[str, Any]:
+    def call(
+        self,
+        method: str,
+        http_timeout: float | None = None,
+        **payload: Any,
+    ) -> dict[str, Any]:
         if not self.is_configured:
             raise TelegramError("TELEGRAM_BOT_TOKEN не задан.")
 
         url = f"{settings.TELEGRAM_API_URL}/bot{self.token}/{method}"
-        response = httpx.post(url, json=payload, timeout=settings.TELEGRAM_REQUEST_TIMEOUT)
+        response = httpx.post(
+            url,
+            json=payload,
+            timeout=(
+                http_timeout if http_timeout is not None else settings.TELEGRAM_REQUEST_TIMEOUT
+            ),
+        )
         data = response.json()
         if not data.get("ok"):
             raise TelegramError(f"{method}: {data.get('description', 'неизвестная ошибка')}")
@@ -81,6 +92,23 @@ class TelegramClient:
 
     def get_me(self) -> dict[str, Any]:
         return self.call("getMe")
+
+    def get_updates(self, offset: int | None, timeout: int) -> list[dict[str, Any]]:
+        """Длинный опрос: Telegram держит соединение, пока нет апдейтов.
+
+        HTTP-таймаут берём с запасом относительно ``timeout``, иначе клиент
+        разорвёт соединение раньше, чем сервер успеет ответить пустым списком.
+        """
+        # http_timeout — про HTTP-соединение, timeout — параметр Telegram.
+        # Имена разные намеренно, иначе они перекрыли бы друг друга.
+        result = self.call(
+            "getUpdates",
+            http_timeout=timeout + 10,
+            offset=offset,
+            timeout=timeout,
+            allowed_updates=["message", "callback_query"],
+        )
+        return result if isinstance(result, list) else []
 
 
 def send_message_safely(chat_id: int, text: str, **kwargs: Any) -> None:
