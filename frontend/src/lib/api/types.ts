@@ -41,3 +41,11 @@ export interface ApiError {
     details?: Record<string, unknown>;
   };
 }
+
+/** Ответ DRF с постраничной разбивкой. */
+export interface Paginated<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}

@@ -1,7 +1,7 @@
 PY := .venv/bin/python
 PIP := .venv/bin/pip
 
-.PHONY: help venv install up down logs psql migrate migrations run shell superuser schema test lint format check reset-db
+.PHONY: help venv install up down logs psql migrate migrations run shell superuser schema front front-install front-build front-lint test lint format check reset-db
 
 help: ## Показать список команд
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -51,6 +51,18 @@ schema: ## Обновить схему OpenAPI и типы для фронтен
 	$(PY) manage.py spectacular --format openapi-json --file frontend/src/lib/api/openapi.json --fail-on-warn
 	npx --yes openapi-typescript@7 frontend/src/lib/api/openapi.json -o frontend/src/lib/api/schema.ts
 
+front-install: ## Установить зависимости фронтенда
+	cd frontend && npm install
+
+front: ## Запустить фронтенд на :3000
+	cd frontend && npm run dev
+
+front-build: ## Собрать фронтенд
+	cd frontend && npm run build
+
+front-lint: ## Проверить фронтенд
+	cd frontend && npm run lint
+
 test: ## Прогнать тесты
 	.venv/bin/pytest
 
@@ -62,4 +74,4 @@ format: ## Отформатировать код
 	.venv/bin/ruff check --fix .
 	.venv/bin/ruff format .
 
-check: lint test ## Линт и тесты
+check: lint test front-lint front-build ## Все проверки: backend и фронтенд

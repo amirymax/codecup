@@ -17,6 +17,7 @@ venv/
 
 # Node
 node_modules/
+/frontend/.env.local
 /frontend/.next/
 /frontend/out/
 /frontend/next-env.d.ts
