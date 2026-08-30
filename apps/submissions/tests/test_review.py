@@ -52,7 +52,11 @@ def test_reviewer_notes_never_leak_through_a_public_profile(client) -> None:
     body = client.get(reverse("public-profile", args=["sarah_dev"])).json()
 
     assert "внутренняя заметка" not in str(body)
-    assert "91" not in str(body)
+    # Проверяем именно отсутствие полей, а не подстроку «91»: короткое число
+    # случайно встречается в идентификаторах и микросекундах дат.
+    for row in body["submissions"]:
+        assert "score" not in row
+        assert "reviewer_notes" not in row
 
 
 def test_participant_cannot_set_their_own_score(client: APIClient, participant) -> None:
