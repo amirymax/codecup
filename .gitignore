@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Django
+*.sqlite3
+/media/
+/staticfiles/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+/frontend/.next/
+/frontend/out/
+/frontend/next-env.d.ts
+
+# Tooling
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
