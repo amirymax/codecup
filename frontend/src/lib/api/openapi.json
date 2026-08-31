@@ -303,6 +303,109 @@
                 }
             }
         },
+        "/api/admin/payments/": {
+            "get": {
+                "operationId": "admin_payments_list",
+                "description": "Очередь проверки взносов.",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedAdminPaymentList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/admin/payments/{id}/decision/": {
+            "post": {
+                "operationId": "admin_payments_decision_create",
+                "description": "Принять или отклонить взнос.",
+                "summary": "Решение по взносу",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PaymentDecisionRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PaymentDecisionRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PaymentDecisionRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminPayment"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/admin/stats/": {
             "get": {
                 "operationId": "admin_stats_retrieve",
@@ -800,6 +903,132 @@
                 }
             }
         },
+        "/api/contests/{slug}/participation/": {
+            "get": {
+                "operationId": "contests_participation_retrieve",
+                "description": "Состояние участия: сумма, реквизиты и свой чек.",
+                "summary": "Участие в контесте",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "contests"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Participation"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/contests/{slug}/participation/receipt/": {
+            "post": {
+                "operationId": "contests_participation_receipt_create",
+                "description": "Чек, загруженный прямо на сайте.",
+                "summary": "Загрузить чек",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "contests"
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReceiptUploadRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReceiptUploadRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Participation"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/contests/{slug}/participation/via-bot/": {
+            "post": {
+                "operationId": "contests_participation_via_bot_create",
+                "description": "Участник обещает прислать чек в бот.",
+                "summary": "Отправить чек через бота",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "contests"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Participation"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/contests/{slug}/submission/": {
             "get": {
                 "operationId": "contests_submission_retrieve",
@@ -1162,9 +1391,24 @@
                         "title": "Призовой фонд"
                     },
                     "currency": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/CurrencyEnum"
+                            }
+                        ],
+                        "title": "Валюта"
+                    },
+                    "entry_fee": {
                         "type": "string",
-                        "title": "Валюта",
-                        "maxLength": 3
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "title": "Взнос за участие",
+                        "description": "Ноль — участие бесплатное."
+                    },
+                    "is_paid": {
+                        "type": "boolean",
+                        "description": "Платный ли контест.\n\nПризнак вычисляется из суммы, а не хранится отдельным флагом: иначе\nвозможно противоречивое состояние «платный, но взнос равен нулю».",
+                        "readOnly": true
                     },
                     "starts_at": {
                         "type": "string",
@@ -1215,6 +1459,7 @@
                     "deadline",
                     "display_number",
                     "id",
+                    "is_paid",
                     "number",
                     "state",
                     "title",
@@ -1256,10 +1501,19 @@
                         "title": "Призовой фонд"
                     },
                     "currency": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/CurrencyEnum"
+                            }
+                        ],
+                        "title": "Валюта"
+                    },
+                    "entry_fee": {
                         "type": "string",
-                        "minLength": 1,
-                        "title": "Валюта",
-                        "maxLength": 3
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "title": "Взнос за участие",
+                        "description": "Ноль — участие бесплатное."
                     },
                     "starts_at": {
                         "type": "string",
@@ -1288,6 +1542,104 @@
                 "required": [
                     "deadline",
                     "title"
+                ]
+            },
+            "AdminPayment": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "username": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "telegram_username": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "contest_title": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "contest_slug": {
+                        "type": "string",
+                        "readOnly": true,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "readOnly": true,
+                        "title": "Сумма"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Валюта"
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PaymentStatusEnum"
+                            }
+                        ],
+                        "readOnly": true,
+                        "title": "Статус"
+                    },
+                    "receipt_url": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "receipt_source": {
+                        "type": "string",
+                        "description": "file — можно открыть, telegram — только в чате, none — чека нет.",
+                        "readOnly": true
+                    },
+                    "rejection_reason": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Причина отказа"
+                    },
+                    "submitted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true,
+                        "title": "Чек получен"
+                    },
+                    "reviewed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true,
+                        "title": "Проверен"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "Создан"
+                    }
+                },
+                "required": [
+                    "amount",
+                    "contest_slug",
+                    "contest_title",
+                    "created_at",
+                    "currency",
+                    "id",
+                    "receipt_source",
+                    "receipt_url",
+                    "rejection_reason",
+                    "reviewed_at",
+                    "status",
+                    "submitted_at",
+                    "telegram_username",
+                    "username"
                 ]
             },
             "AdminStats": {
@@ -1700,7 +2052,11 @@
                         "title": "Призовой фонд"
                     },
                     "currency": {
-                        "type": "string",
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/CurrencyEnum"
+                            }
+                        ],
                         "readOnly": true,
                         "title": "Валюта"
                     },
@@ -1718,6 +2074,19 @@
                     "participants_count": {
                         "type": "integer",
                         "description": "Число участников: черновики не считаются участием.\n\nЗначение берётся из аннотации, если вьюха её сделала, иначе\nсчитается запросом — чтобы сериализатор работал и вне списка.",
+                        "readOnly": true
+                    },
+                    "entry_fee": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "readOnly": true,
+                        "title": "Взнос за участие",
+                        "description": "Ноль — участие бесплатное."
+                    },
+                    "is_paid": {
+                        "type": "boolean",
+                        "description": "Платный ли контест.\n\nПризнак вычисляется из суммы, а не хранится отдельным флагом: иначе\nвозможно противоречивое состояние «платный, но взнос равен нулю».",
                         "readOnly": true
                     },
                     "state": {
@@ -1770,7 +2139,9 @@
                     "deadline",
                     "description",
                     "display_number",
+                    "entry_fee",
                     "id",
+                    "is_paid",
                     "my_submission",
                     "number",
                     "participants_count",
@@ -1824,7 +2195,11 @@
                         "title": "Призовой фонд"
                     },
                     "currency": {
-                        "type": "string",
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/CurrencyEnum"
+                            }
+                        ],
                         "readOnly": true,
                         "title": "Валюта"
                     },
@@ -1844,6 +2219,19 @@
                         "description": "Число участников: черновики не считаются участием.\n\nЗначение берётся из аннотации, если вьюха её сделала, иначе\nсчитается запросом — чтобы сериализатор работал и вне списка.",
                         "readOnly": true
                     },
+                    "entry_fee": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "readOnly": true,
+                        "title": "Взнос за участие",
+                        "description": "Ноль — участие бесплатное."
+                    },
+                    "is_paid": {
+                        "type": "boolean",
+                        "description": "Платный ли контест.\n\nПризнак вычисляется из суммы, а не хранится отдельным флагом: иначе\nвозможно противоречивое состояние «платный, но взнос равен нулю».",
+                        "readOnly": true
+                    },
                     "state": {
                         "allOf": [
                             {
@@ -1858,7 +2246,9 @@
                     "deadline",
                     "description",
                     "display_number",
+                    "entry_fee",
                     "id",
+                    "is_paid",
                     "number",
                     "participants_count",
                     "prize_pool",
@@ -1887,6 +2277,23 @@
                 "type": "string",
                 "description": "* `draft` - черновик\n* `published` - опубликован\n* `archived` - в архиве"
             },
+            "CurrencyEnum": {
+                "enum": [
+                    "USD",
+                    "TJS",
+                    "RUB"
+                ],
+                "type": "string",
+                "description": "* `USD` - доллар США\n* `TJS` - сомони\n* `RUB` - рубль"
+            },
+            "DecisionEnum": {
+                "enum": [
+                    "accept",
+                    "reject"
+                ],
+                "type": "string",
+                "description": "* `accept` - accept\n* `reject` - reject"
+            },
             "DisplayStatusEnum": {
                 "enum": [
                     "draft",
@@ -1912,6 +2319,75 @@
                 },
                 "required": [
                     "contest"
+                ]
+            },
+            "MyPayment": {
+                "type": "object",
+                "description": "Своё участие глазами участника.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "readOnly": true,
+                        "title": "Сумма"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Валюта"
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PaymentStatusEnum"
+                            }
+                        ],
+                        "readOnly": true,
+                        "title": "Статус"
+                    },
+                    "has_receipt": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "expects_receipt_in_bot": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "title": "Ждём чек в боте"
+                    },
+                    "rejection_reason": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Причина отказа"
+                    },
+                    "submitted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true,
+                        "title": "Чек получен"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "Создан"
+                    }
+                },
+                "required": [
+                    "amount",
+                    "created_at",
+                    "currency",
+                    "expects_receipt_in_bot",
+                    "has_receipt",
+                    "id",
+                    "rejection_reason",
+                    "status",
+                    "submitted_at"
                 ]
             },
             "MySubmission": {
@@ -2111,6 +2587,37 @@
                     }
                 }
             },
+            "PaginatedAdminPaymentList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AdminPayment"
+                        }
+                    }
+                }
+            },
             "PaginatedAdminSubmissionListList": {
                 "type": "object",
                 "required": [
@@ -2235,6 +2742,45 @@
                     }
                 }
             },
+            "Participation": {
+                "type": "object",
+                "description": "Что нужно знать странице контеста об участии.",
+                "properties": {
+                    "is_paid": {
+                        "type": "boolean"
+                    },
+                    "entry_fee": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "requisites": {
+                        "type": "string"
+                    },
+                    "can_submit": {
+                        "type": "boolean"
+                    },
+                    "payment": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/MyPayment"
+                            }
+                        ],
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "can_submit",
+                    "currency",
+                    "entry_fee",
+                    "is_paid",
+                    "payment",
+                    "requisites"
+                ]
+            },
             "PatchedAdminContestRequest": {
                 "type": "object",
                 "description": "Создание и редактирование контеста админом.",
@@ -2270,10 +2816,19 @@
                         "title": "Призовой фонд"
                     },
                     "currency": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/CurrencyEnum"
+                            }
+                        ],
+                        "title": "Валюта"
+                    },
+                    "entry_fee": {
                         "type": "string",
-                        "minLength": 1,
-                        "title": "Валюта",
-                        "maxLength": 3
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "title": "Взнос за участие",
+                        "description": "Ноль — участие бесплатное."
                     },
                     "starts_at": {
                         "type": "string",
@@ -2320,6 +2875,32 @@
                         "title": "Победитель"
                     }
                 }
+            },
+            "PaymentDecisionRequest": {
+                "type": "object",
+                "description": "Решение админа по чеку.",
+                "properties": {
+                    "decision": {
+                        "$ref": "#/components/schemas/DecisionEnum"
+                    },
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 500
+                    }
+                },
+                "required": [
+                    "decision"
+                ]
+            },
+            "PaymentStatusEnum": {
+                "enum": [
+                    "awaiting_receipt",
+                    "pending",
+                    "accepted",
+                    "rejected"
+                ],
+                "type": "string",
+                "description": "* `awaiting_receipt` - ждём чек\n* `pending` - на проверке\n* `accepted` - принят\n* `rejected` - отклонён"
             },
             "ProfileSubmission": {
                 "type": "object",
@@ -2399,6 +2980,19 @@
                     "submissions_count",
                     "user",
                     "wins_count"
+                ]
+            },
+            "ReceiptUploadRequest": {
+                "type": "object",
+                "description": "Чек, загруженный с сайта.",
+                "properties": {
+                    "receipt": {
+                        "type": "string",
+                        "format": "binary"
+                    }
+                },
+                "required": [
+                    "receipt"
                 ]
             },
             "SubmissionStatusEnum": {

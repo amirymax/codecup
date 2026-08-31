@@ -97,6 +97,35 @@ export const contest = {
   seconds: "СЕК",
 } as const;
 
+export const participation = {
+  entryFee: "Взнос за участие",
+  free: "Участие бесплатное",
+  participateCta: "Участвовать",
+  modalTitle: "Оплата участия",
+  modalIntro: "Переведите взнос по реквизитам ниже и пришлите чек.",
+  requisitesLabel: "Реквизиты",
+  copied: "Скопировано",
+  copy: "Скопировать",
+  uploadLabel: "Загрузить чек",
+  uploadHint: "Скриншот или PDF, до 10 МБ",
+  chooseFile: "Выбрать файл",
+  orSendViaBot: "или",
+  sendViaBot: "Отправить чек через Telegram",
+  waitingInBot: "Ждём ваш чек в Telegram-боте",
+  waitingInBotHint: "Откройте бота и пришлите скриншот или PDF одним сообщением.",
+  openBot: "Открыть бота",
+  uploading: "Загружаем чек…",
+  statusPending: "Чек на проверке",
+  statusPendingHint: "Обычно это занимает немного времени. Мы сообщим в Telegram.",
+  statusAccepted: "Взнос принят",
+  statusAcceptedHint: "Можно отправлять решение.",
+  statusRejected: "Чек отклонён",
+  sendAnother: "Прислать другой чек",
+  close: "Закрыть",
+  payToParticipate: "Оплатить участие",
+  loginToParticipate: "Войдите, чтобы участвовать",
+} as const;
+
 export const submit = {
   heading: "Отправьте ваше решение",
   subheading:
@@ -160,7 +189,11 @@ export const createContest = {
   descriptionPlaceholder: "Что должны создать участники?",
   requirementsLabel: "Требования",
   addRequirement: "+ Добавить требование",
-  prizeLabel: "Призовой фонд (USD)",
+  prizeLabel: "Призовой фонд",
+  currencyLabel: "Валюта",
+  paidLabel: "Платное участие",
+  paidHint: "Участник сможет отправить решение только после принятого взноса.",
+  entryFeeLabel: "Взнос за участие",
   deadlineLabel: "Дедлайн",
   publishing: "Публикация контеста…",
   publishedMsg: "Контест успешно опубликован.",
@@ -173,6 +206,23 @@ export const createContest = {
   titleRequired: "Название контеста обязательно.",
   defaultTitle: "Название вашего контеста",
   defaultDesc: "Описание контеста появится здесь по мере ввода.",
+} as const;
+
+export const payments = {
+  title: "Взносы",
+  pending: "На проверке",
+  empty: "Взносов пока нет",
+  accept: "Принять",
+  reject: "Отклонить",
+  reasonPlaceholder: "Почему чек отклонён? Участник это увидит.",
+  openReceipt: "Открыть чек",
+  noReceipt: "Чек ещё не прислан",
+  receiptInTelegram: "Чек в Telegram",
+  accepted: "Принят",
+  rejected: "Отклонён",
+  awaiting: "Ждём чек",
+  saving: "Сохраняем…",
+  close: "Отмена",
 } as const;
 
 export const review = {

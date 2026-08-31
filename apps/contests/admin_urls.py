@@ -1,5 +1,6 @@
 from django.urls import path
 
+from apps.payments.urls import admin_urlpatterns as payment_urlpatterns
 from apps.submissions.urls import admin_urlpatterns as submission_urlpatterns
 from apps.users.admin_urls import urlpatterns as user_urlpatterns
 
@@ -15,4 +16,5 @@ urlpatterns = [
     ),
     *submission_urlpatterns,
     *user_urlpatterns,
+    *payment_urlpatterns,
 ]

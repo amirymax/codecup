@@ -7,6 +7,7 @@ Bot API, не поднимая HTTP-слой.
 from __future__ import annotations
 
 import logging
+from contextlib import suppress
 from typing import Any
 
 from django.db import transaction
@@ -29,6 +30,11 @@ def handle_update(update: dict[str, Any]) -> None:
 def _handle_message(message: dict[str, Any]) -> None:
     text = (message.get("text") or "").strip()
     chat_id = message["chat"]["id"]
+
+    # Фото или файл от того, кто обещал прислать чек, — это чек.
+    if "photo" in message or "document" in message:
+        _handle_receipt(message)
+        return
 
     if not text.startswith("/start"):
         return
@@ -54,7 +60,13 @@ def _handle_callback_query(query: dict[str, Any]) -> None:
     from .client import TelegramClient, TelegramError
 
     data = query.get("data") or ""
-    action, _, nonce = data.partition(":")
+    action, _, payload = data.partition(":")
+
+    if action in {"pay_ok", "pay_no"} and payload:
+        _handle_payment_decision(query, action, payload)
+        return
+
+    nonce = payload
     if action not in {"confirm", "cancel"} or not nonce:
         return
 
@@ -99,3 +111,104 @@ def _handle_callback_query(query: dict[str, Any]) -> None:
 
     answer(messages.CALLBACK_CONFIRMED)
     replace_prompt(messages.LOGIN_CONFIRMED)
+
+
+def _handle_receipt(message: dict[str, Any]) -> None:
+    """Фото или документ от участника, от которого ждут чек."""
+    from apps.payments.models import EntryPayment
+    from apps.telegrambot.payments import download_receipt, forward_receipt_to_admin
+    from apps.users.models import User
+
+    chat_id = message["chat"]["id"]
+    sender = message.get("from") or {}
+
+    user = User.objects.filter(telegram_id=sender.get("id")).first()
+    if user is None:
+        send_message_safely(chat_id, messages.RECEIPT_NOT_EXPECTED)
+        return
+
+    payment = (
+        EntryPayment.objects.filter(user=user, expects_receipt_in_bot=True)
+        .select_related("contest")
+        .order_by("-created_at")
+        .first()
+    )
+    if payment is None:
+        send_message_safely(chat_id, messages.RECEIPT_NOT_EXPECTED)
+        return
+
+    file_id, kind = _extract_file(message)
+    if not file_id:
+        send_message_safely(chat_id, messages.RECEIPT_WRONG_FORMAT)
+        return
+
+    payment.attach_receipt(telegram_file_id=file_id, kind=kind)
+    send_message_safely(chat_id, messages.RECEIPT_RECEIVED)
+    # Копию кладём к себе, чтобы чек был виден и в админ-панели, а не только
+    # в переписке администратора.
+    download_receipt(payment)
+    forward_receipt_to_admin(payment)
+
+
+def _extract_file(message: dict[str, Any]) -> tuple[str, str]:
+    """id файла и его тип. Из фото берём самый крупный размер."""
+    if photos := message.get("photo"):
+        return photos[-1]["file_id"], "photo"
+
+    document = message.get("document") or {}
+    mime = (document.get("mime_type") or "").lower()
+    if document and (mime.startswith("image/") or mime == "application/pdf"):
+        return document["file_id"], "document"
+
+    return "", ""
+
+
+def _handle_payment_decision(query: dict[str, Any], action: str, payment_id: str) -> None:
+    """Кнопки «Принять» и «Отклонить» под пересланным чеком."""
+    from apps.payments.models import EntryPayment
+    from apps.telegrambot.payments import notify_participant
+    from apps.users.models import User
+
+    from .client import TelegramClient, TelegramError
+
+    client = TelegramClient()
+    reviewer = User.objects.filter(telegram_id=(query.get("from") or {}).get("id")).first()
+
+    def answer(text: str) -> None:
+        with suppress(TelegramError):
+            client.answer_callback_query(query["id"], text)
+
+    # Решать может только сотрудник: кнопку могли переслать кому угодно.
+    if reviewer is None or not reviewer.is_staff:
+        answer(messages.CALLBACK_EXPIRED)
+        return
+
+    payment = EntryPayment.objects.filter(pk=payment_id).select_related("contest", "user").first()
+    if payment is None:
+        answer(messages.CALLBACK_EXPIRED)
+        return
+
+    if action == "pay_ok":
+        payment.accept(reviewer)
+        answer(messages.ADMIN_DECISION_ACCEPTED)
+    else:
+        payment.reject(reviewer, "")
+        answer(messages.ADMIN_DECISION_REJECTED)
+
+    message = query.get("message") or {}
+    if message.get("message_id") and message.get("chat"):
+        decision = (
+            messages.ADMIN_DECISION_ACCEPTED
+            if action == "pay_ok"
+            else messages.ADMIN_DECISION_REJECTED
+        )
+        with suppress(TelegramError):
+            client.call(
+                "editMessageCaption",
+                chat_id=message["chat"]["id"],
+                message_id=message["message_id"],
+                caption=f"{messages.receipt_for_admin(payment)}\n\n<b>{decision}</b>",
+                parse_mode="HTML",
+            )
+
+    notify_participant(payment)

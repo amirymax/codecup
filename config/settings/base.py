@@ -39,6 +39,7 @@ LOCAL_APPS = [
     "apps.users",
     "apps.contests",
     "apps.submissions",
+    "apps.payments",
     "apps.telegrambot",
 ]
 
@@ -143,6 +144,21 @@ TELEGRAM_AUTH_TOKEN_TTL = env.int("TELEGRAM_AUTH_TOKEN_TTL", default=300)
 
 FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")
 
+# --- Оплата участия ---------------------------------------------------------
+# Реквизиты общие для всех платных контестов; меняются через .env без правки кода.
+# В .env перенос строки записывается как \n — разворачиваем его, иначе
+# многострочные реквизиты слиплись бы в одну строку.
+PAYMENT_REQUISITES = env(
+    "PAYMENT_REQUISITES",
+    default="Реквизиты для оплаты пока не заданы. Напишите администратору.",
+).replace("\\n", "\n")
+# Чеки уходят этому администратору. Ищем по @username, а не по числовому id:
+# аккаунт может быть пересоздан, username остаётся прежним.
+TELEGRAM_ADMIN_USERNAME = env("TELEGRAM_ADMIN_USERNAME", default="AmiriCode")
+# Что принимаем как чек.
+RECEIPT_MAX_BYTES = env.int("RECEIPT_MAX_BYTES", default=10 * 1024 * 1024)
+RECEIPT_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"]
+
 SPECTACULAR_SETTINGS = {
     "TITLE": "CodeCup.tech API",
     "DESCRIPTION": "API платформы контестов для разработчиков.",
@@ -156,6 +172,8 @@ SPECTACULAR_SETTINGS = {
         "ContestStateEnum": "apps.contests.models.ContestState.choices",
         "SubmissionStatusEnum": "apps.submissions.models.SubmissionStatus.choices",
         "DisplayStatusEnum": "apps.submissions.models.DisplayStatus.choices",
+        "PaymentStatusEnum": "apps.payments.models.PaymentStatus.choices",
+        "CurrencyEnum": "apps.contests.models.Currency.choices",
     },
 }
 

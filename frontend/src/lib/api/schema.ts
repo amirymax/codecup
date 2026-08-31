@@ -62,6 +62,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/payments/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Очередь проверки взносов. */
+        get: operations["admin_payments_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/payments/{id}/decision/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Решение по взносу
+         * @description Принять или отклонить взнос.
+         */
+        post: operations["admin_payments_decision_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/stats/": {
         parameters: {
             query?: never;
@@ -306,6 +343,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/contests/{slug}/participation/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Участие в контесте
+         * @description Состояние участия: сумма, реквизиты и свой чек.
+         */
+        get: operations["contests_participation_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/contests/{slug}/participation/receipt/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Загрузить чек
+         * @description Чек, загруженный прямо на сайте.
+         */
+        post: operations["contests_participation_receipt_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/contests/{slug}/participation/via-bot/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Отправить чек через бота
+         * @description Участник обещает прислать чек в бот.
+         */
+        post: operations["contests_participation_via_bot_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/contests/{slug}/submission/": {
         parameters: {
             query?: never;
@@ -483,7 +580,20 @@ export interface components {
              */
             prize_pool?: string;
             /** Валюта */
-            currency?: string;
+            currency?: components["schemas"]["CurrencyEnum"];
+            /**
+             * Взнос за участие
+             * Format: decimal
+             * @description Ноль — участие бесплатное.
+             */
+            entry_fee?: string;
+            /**
+             * @description Платный ли контест.
+             *
+             *     Признак вычисляется из суммы, а не хранится отдельным флагом: иначе
+             *     возможно противоречивое состояние «платный, но взнос равен нулю».
+             */
+            readonly is_paid: boolean;
             /**
              * Начало
              * Format: date-time
@@ -525,7 +635,13 @@ export interface components {
              */
             prize_pool?: string;
             /** Валюта */
-            currency?: string;
+            currency?: components["schemas"]["CurrencyEnum"];
+            /**
+             * Взнос за участие
+             * Format: decimal
+             * @description Ноль — участие бесплатное.
+             */
+            entry_fee?: string;
             /**
              * Начало
              * Format: date-time
@@ -540,6 +656,42 @@ export interface components {
             status?: components["schemas"]["ContestStatusEnum"];
             /** Показывать на главной */
             is_featured?: boolean;
+        };
+        AdminPayment: {
+            readonly id: number;
+            readonly username: string;
+            readonly telegram_username: string;
+            readonly contest_title: string;
+            readonly contest_slug: string;
+            /**
+             * Сумма
+             * Format: decimal
+             */
+            readonly amount: string;
+            /** Валюта */
+            readonly currency: string;
+            /** Статус */
+            readonly status: components["schemas"]["PaymentStatusEnum"];
+            readonly receipt_url: string | null;
+            /** @description file — можно открыть, telegram — только в чате, none — чека нет. */
+            readonly receipt_source: string;
+            /** Причина отказа */
+            readonly rejection_reason: string;
+            /**
+             * Чек получен
+             * Format: date-time
+             */
+            readonly submitted_at: string | null;
+            /**
+             * Проверен
+             * Format: date-time
+             */
+            readonly reviewed_at: string | null;
+            /**
+             * Создан
+             * Format: date-time
+             */
+            readonly created_at: string;
         };
         /** @description Четыре плитки на админ-панели. */
         AdminStats: {
@@ -689,7 +841,7 @@ export interface components {
              */
             readonly prize_pool: string;
             /** Валюта */
-            readonly currency: string;
+            readonly currency: components["schemas"]["CurrencyEnum"];
             /**
              * Дедлайн
              * Format: date-time
@@ -709,6 +861,19 @@ export interface components {
              *     считается запросом — чтобы сериализатор работал и вне списка.
              */
             readonly participants_count: number;
+            /**
+             * Взнос за участие
+             * Format: decimal
+             * @description Ноль — участие бесплатное.
+             */
+            readonly entry_fee: string;
+            /**
+             * @description Платный ли контест.
+             *
+             *     Признак вычисляется из суммы, а не хранится отдельным флагом: иначе
+             *     возможно противоречивое состояние «платный, но взнос равен нулю».
+             */
+            readonly is_paid: boolean;
             readonly state: components["schemas"]["ContestStateEnum"];
             readonly requirements: string[];
             /**
@@ -743,7 +908,7 @@ export interface components {
              */
             readonly prize_pool: string;
             /** Валюта */
-            readonly currency: string;
+            readonly currency: components["schemas"]["CurrencyEnum"];
             /**
              * Дедлайн
              * Format: date-time
@@ -763,6 +928,19 @@ export interface components {
              *     считается запросом — чтобы сериализатор работал и вне списка.
              */
             readonly participants_count: number;
+            /**
+             * Взнос за участие
+             * Format: decimal
+             * @description Ноль — участие бесплатное.
+             */
+            readonly entry_fee: string;
+            /**
+             * @description Платный ли контест.
+             *
+             *     Признак вычисляется из суммы, а не хранится отдельным флагом: иначе
+             *     возможно противоречивое состояние «платный, но взнос равен нулю».
+             */
+            readonly is_paid: boolean;
             readonly state: components["schemas"]["ContestStateEnum"];
         };
         /**
@@ -781,6 +959,19 @@ export interface components {
          */
         ContestStatusEnum: "draft" | "published" | "archived";
         /**
+         * @description * `USD` - доллар США
+         *     * `TJS` - сомони
+         *     * `RUB` - рубль
+         * @enum {string}
+         */
+        CurrencyEnum: "USD" | "TJS" | "RUB";
+        /**
+         * @description * `accept` - accept
+         *     * `reject` - reject
+         * @enum {string}
+         */
+        DecisionEnum: "accept" | "reject";
+        /**
          * @description * `draft` - черновик
          *     * `submitted` - отправлено
          *     * `reviewed` - проверено
@@ -791,6 +982,34 @@ export interface components {
         /** @description Ответ главной страницы; contest равен null, когда ничего не идёт. */
         FeaturedContest: {
             contest: components["schemas"]["ContestDetail"] | null;
+        };
+        /** @description Своё участие глазами участника. */
+        MyPayment: {
+            readonly id: number;
+            /**
+             * Сумма
+             * Format: decimal
+             */
+            readonly amount: string;
+            /** Валюта */
+            readonly currency: string;
+            /** Статус */
+            readonly status: components["schemas"]["PaymentStatusEnum"];
+            readonly has_receipt: boolean;
+            /** Ждём чек в боте */
+            readonly expects_receipt_in_bot: boolean;
+            /** Причина отказа */
+            readonly rejection_reason: string;
+            /**
+             * Чек получен
+             * Format: date-time
+             */
+            readonly submitted_at: string | null;
+            /**
+             * Создан
+             * Format: date-time
+             */
+            readonly created_at: string;
         };
         /**
          * @description Своя заявка глазами участника.
@@ -890,6 +1109,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["AdminContest"][];
         };
+        PaginatedAdminPaymentList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["AdminPayment"][];
+        };
         PaginatedAdminSubmissionListList: {
             /** @example 123 */
             count: number;
@@ -950,6 +1184,16 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["ProfileSubmission"][];
         };
+        /** @description Что нужно знать странице контеста об участии. */
+        Participation: {
+            is_paid: boolean;
+            /** Format: decimal */
+            entry_fee: string;
+            currency: string;
+            requisites: string;
+            can_submit: boolean;
+            payment: components["schemas"]["MyPayment"] | null;
+        };
         /** @description Создание и редактирование контеста админом. */
         PatchedAdminContestRequest: {
             /** Адрес */
@@ -965,7 +1209,13 @@ export interface components {
              */
             prize_pool?: string;
             /** Валюта */
-            currency?: string;
+            currency?: components["schemas"]["CurrencyEnum"];
+            /**
+             * Взнос за участие
+             * Format: decimal
+             * @description Ноль — участие бесплатное.
+             */
+            entry_fee?: string;
             /**
              * Начало
              * Format: date-time
@@ -990,6 +1240,19 @@ export interface components {
             /** Победитель */
             is_winner?: boolean;
         };
+        /** @description Решение админа по чеку. */
+        PaymentDecisionRequest: {
+            decision: components["schemas"]["DecisionEnum"];
+            reason?: string;
+        };
+        /**
+         * @description * `awaiting_receipt` - ждём чек
+         *     * `pending` - на проверке
+         *     * `accepted` - принят
+         *     * `rejected` - отклонён
+         * @enum {string}
+         */
+        PaymentStatusEnum: "awaiting_receipt" | "pending" | "accepted" | "rejected";
         /** @description Строка истории на странице профиля. */
         ProfileSubmission: {
             readonly id: number;
@@ -1014,6 +1277,11 @@ export interface components {
             submissions_count: number;
             wins_count: number;
             submissions: components["schemas"]["ProfileSubmission"][];
+        };
+        /** @description Чек, загруженный с сайта. */
+        ReceiptUploadRequest: {
+            /** Format: binary */
+            receipt: string;
         };
         /**
          * @description * `draft` - черновик
@@ -1221,6 +1489,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminContest"];
+                };
+            };
+        };
+    };
+    admin_payments_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedAdminPaymentList"];
+                };
+            };
+        };
+    };
+    admin_payments_decision_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentDecisionRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PaymentDecisionRequest"];
+                "multipart/form-data": components["schemas"]["PaymentDecisionRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPayment"];
                 };
             };
         };
@@ -1511,6 +1830,74 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContestDetail"];
+                };
+            };
+        };
+    };
+    contests_participation_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Participation"];
+                };
+            };
+        };
+    };
+    contests_participation_receipt_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["ReceiptUploadRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ReceiptUploadRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Participation"];
+                };
+            };
+        };
+    };
+    contests_participation_via_bot_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Participation"];
                 };
             };
         };

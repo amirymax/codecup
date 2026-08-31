@@ -26,6 +26,12 @@ def validate_requirements(value: object) -> None:
             raise ValidationError(f"Требование длиннее {MAX_REQUIREMENT_LENGTH} символов.")
 
 
+class Currency(models.TextChoices):
+    USD = "USD", "доллар США"
+    TJS = "TJS", "сомони"
+    RUB = "RUB", "рубль"
+
+
 class ContestStatus(models.TextChoices):
     """То, чем управляет админ."""
 
@@ -81,7 +87,19 @@ class Contest(models.Model):
         validators=[validate_requirements],
     )
     prize_pool = models.DecimalField("призовой фонд", max_digits=12, decimal_places=2, default=0)
-    currency = models.CharField("валюта", max_length=3, default="USD")
+    currency = models.CharField(
+        "валюта",
+        max_length=3,
+        choices=Currency.choices,
+        default=Currency.USD,
+    )
+    entry_fee = models.DecimalField(
+        "взнос за участие",
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        help_text="Ноль — участие бесплатное.",
+    )
     starts_at = models.DateTimeField("начало", null=True, blank=True)
     deadline = models.DateTimeField("дедлайн")
     status = models.CharField(
@@ -156,6 +174,15 @@ class Contest(models.Model):
     @property
     def display_number(self) -> str:
         return f"#{self.number:02d}"
+
+    @property
+    def is_paid(self) -> bool:
+        """Платный ли контест.
+
+        Признак вычисляется из суммы, а не хранится отдельным флагом: иначе
+        возможно противоречивое состояние «платный, но взнос равен нулю».
+        """
+        return self.entry_fee > 0
 
     def publish(self) -> None:
         self.status = ContestStatus.PUBLISHED

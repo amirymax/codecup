@@ -11,12 +11,27 @@ const MONTHS_NOMINATIVE = [
   "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь",
 ];
 
-/** «5 000 $» — призовой фонд как на макете. */
+/** Символ ставится перед суммой только у доллара — так принято для $. */
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: "$",
+  TJS: "смн",
+  RUB: "₽",
+};
+
+/** «$5 000», «5 000 смн», «5 000 ₽». */
 export function formatMoney(amount: string | number, currency = "USD"): string {
   const value = typeof amount === "string" ? Number.parseFloat(amount) : amount;
-  const symbol = currency === "USD" ? "$" : currency;
-  return `${symbol}${new Intl.NumberFormat("ru-RU").format(Math.round(value))}`;
+  const formatted = new Intl.NumberFormat("ru-RU").format(Math.round(value));
+  const symbol = CURRENCY_SYMBOLS[currency] ?? currency;
+
+  return currency === "USD" ? `${symbol}${formatted}` : `${formatted} ${symbol}`;
 }
+
+export const CURRENCIES = [
+  { code: "USD", label: "Доллар США ($)" },
+  { code: "TJS", label: "Сомони (смн)" },
+  { code: "RUB", label: "Рубль (₽)" },
+] as const;
 
 export function formatNumber(value: number): string {
   return new Intl.NumberFormat("ru-RU").format(value);

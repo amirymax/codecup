@@ -25,6 +25,12 @@ export type ProfileSubmission = Schemas["ProfileSubmission"];
 export type SubmissionBadge = ProfileSubmission["display_status"];
 export type PublicProfile = Schemas["PublicProfile"];
 
+// --- оплата участия ---
+export type Participation = Schemas["Participation"];
+export type MyPayment = Schemas["MyPayment"];
+export type PaymentStatus = MyPayment["status"];
+export type Currency = ContestDetail["currency"];
+
 // --- админка ---
 export type AdminContest = Schemas["AdminContest"];
 export type AdminSubmissionRow = Schemas["AdminSubmissionList"];
@@ -32,6 +38,7 @@ export type AdminSubmission = Schemas["AdminSubmissionDetail"];
 export type ReviewNavigation = Schemas["Navigation"];
 export type AdminStats = Schemas["AdminStats"];
 export type AdminUser = Schemas["AdminUser"];
+export type AdminPayment = Schemas["AdminPayment"];
 
 /** Формат ошибки, единый для всего API. */
 export interface ApiError {

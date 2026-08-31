@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createContest, publishContest, updateContest } from "@/lib/api/admin";
 import { ApiRequestError } from "@/lib/api/errors";
-import { formatMoney } from "@/lib/format";
+import { CURRENCIES, formatMoney } from "@/lib/format";
 import { admin, createContest as t } from "@/messages/ru";
 import type { AdminContest } from "@/lib/api/types";
 
@@ -28,6 +28,11 @@ export function ContestForm({ existing }: { existing?: AdminContest }) {
     existing?.requirements?.length ? existing.requirements : ["", ""],
   );
   const [prize, setPrize] = useState(existing?.prize_pool ?? "");
+  const [currency, setCurrency] = useState<string>(existing?.currency ?? "USD");
+  const [entryFee, setEntryFee] = useState(existing?.entry_fee ?? "");
+  // Платность выводится из суммы, а не хранится отдельно: так не бывает
+  // состояния «платный, но взнос нулевой».
+  const [isPaid, setIsPaid] = useState(Number(existing?.entry_fee ?? 0) > 0);
   const [deadline, setDeadline] = useState(toLocalInput(existing?.deadline));
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -41,6 +46,8 @@ export function ContestForm({ existing }: { existing?: AdminContest }) {
       // Пустые строки backend отвергнет, поэтому чистим их здесь.
       requirements: requirements.map((item) => item.trim()).filter(Boolean),
       prize_pool: prize || "0",
+      currency,
+      entry_fee: isPaid ? entryFee || "0" : "0",
       deadline: deadline ? new Date(deadline).toISOString() : "",
     };
   }
@@ -164,7 +171,23 @@ export function ContestForm({ existing }: { existing?: AdminContest }) {
             <FieldError message={errors.requirements} />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <Label htmlFor="currency">{t.currencyLabel}</Label>
+              <select
+                id="currency"
+                value={currency}
+                onChange={(event) => setCurrency(event.target.value)}
+                className="w-full rounded-[9px] border border-line-2 bg-surface px-3.5 py-3
+                           text-[14.5px] text-text"
+              >
+                {CURRENCIES.map((item) => (
+                  <option key={item.code} value={item.code}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div>
               <Label htmlFor="prize">{t.prizeLabel}</Label>
               <Input
@@ -189,6 +212,34 @@ export function ContestForm({ existing }: { existing?: AdminContest }) {
               />
               <FieldError message={errors.deadline} />
             </div>
+          </div>
+
+          <div className="rounded-xl border border-line bg-surface p-4">
+            <label className="flex cursor-pointer items-center gap-2.5">
+              <input
+                type="checkbox"
+                checked={isPaid}
+                onChange={(event) => setIsPaid(event.target.checked)}
+                className="size-4 accent-green"
+              />
+              <span className="text-[13.5px] font-semibold text-text-2">{t.paidLabel}</span>
+            </label>
+            <p className="mt-1.5 ml-6.5 text-[12.5px] text-muted-2">{t.paidHint}</p>
+
+            {isPaid && (
+              <div className="mt-4 ml-6.5">
+                <Label htmlFor="entry_fee">{t.entryFeeLabel}</Label>
+                <Input
+                  id="entry_fee"
+                  value={entryFee}
+                  onChange={(event) => setEntryFee(event.target.value)}
+                  placeholder="150"
+                  className="max-w-[200px] font-mono"
+                  aria-invalid={Boolean(errors.entry_fee)}
+                />
+                <FieldError message={errors.entry_fee} />
+              </div>
+            )}
           </div>
 
           {busy !== "idle" && (
@@ -243,7 +294,7 @@ export function ContestForm({ existing }: { existing?: AdminContest }) {
               <div>
                 <div className="mb-1 text-[10.5px] text-muted-2 uppercase">{t.prizeWord}</div>
                 <div className="font-mono text-[15px] font-bold text-green-light">
-                  {formatMoney(prize || "0")}
+                  {formatMoney(prize || "0", currency)}
                 </div>
               </div>
               <div>
