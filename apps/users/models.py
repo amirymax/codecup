@@ -32,6 +32,11 @@ class User(AbstractUser):
 
     objects = UserManager()
 
+    # createsuperuser обязан спросить telegram_id: поле уникальное и без
+    # NULL, а без него команда падала на вставке. Email не спрашиваем —
+    # в проекте его нет, вход только через Telegram.
+    REQUIRED_FIELDS = ["telegram_id"]
+
     class Meta:
         verbose_name = "пользователь"
         verbose_name_plural = "пользователи"

@@ -1,7 +1,7 @@
 PY := .venv/bin/python
 PIP := .venv/bin/pip
 
-.PHONY: help venv install up down logs psql migrate migrations run bot shell superuser schema front front-install front-build front-lint prod-build prod-up prod-logs prod-check test lint format check reset-db
+.PHONY: help venv install up down logs psql migrate migrations run bot shell superuser make-admin schema front front-install front-build front-lint prod-build prod-up prod-logs prod-check test lint format check reset-db
 
 help: ## Показать список команд
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -47,8 +47,11 @@ bot: ## Запустить Telegram-бота (длинный опрос)
 shell: ## Django shell
 	$(PY) manage.py shell
 
-superuser: ## Создать администратора
+superuser: ## Создать администратора (спросит Telegram ID)
 	$(PY) manage.py createsuperuser
+
+make-admin: ## Выдать права админа: make make-admin WHO=@AmiriCode
+	$(PY) manage.py make_admin --telegram-username $(WHO)
 
 schema: ## Обновить схему OpenAPI и типы для фронтенда
 	$(PY) manage.py spectacular --format openapi-json --file frontend/src/lib/api/openapi.json --fail-on-warn
