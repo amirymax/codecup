@@ -8,7 +8,11 @@ import { Navbar } from "@/components/Navbar";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ApiRequestError } from "@/lib/api/errors";
 import { getContest, getCurrentUser, getParticipation } from "@/lib/api/server";
-import { EntryFeeRow, ParticipationCta } from "@/components/payments/ParticipationCta";
+import {
+  EntryFeeRow,
+  ParticipationCta,
+  PaymentStatusBanner,
+} from "@/components/payments/ParticipationCta";
 import { formatMoney, formatNumber, formatRelative, formatShortDate } from "@/lib/format";
 import { contest as t, statusLabels } from "@/messages/ru";
 
@@ -139,6 +143,8 @@ export default async function ContestPage({ params }: Props) {
               </div>
 
               <EntryFeeRow participation={participation} />
+
+              <PaymentStatusBanner participation={participation} />
 
               {isOver ? (
                 <div

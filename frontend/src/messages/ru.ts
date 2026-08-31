@@ -124,6 +124,14 @@ export const participation = {
   close: "Закрыть",
   payToParticipate: "Оплатить участие",
   loginToParticipate: "Войдите, чтобы участвовать",
+  bannerPending: "Чек на проверке",
+  bannerPendingHint: "Мы сообщим о решении в Telegram.",
+  bannerAccepted: "Взнос принят",
+  bannerAcceptedHint: "Можно отправлять решение.",
+  bannerRejected: "Чек отклонён",
+  bannerRejectedHint: "Пришлите другой чек.",
+  bannerWaiting: "Ждём чек в Telegram-боте",
+  bannerWaitingHint: "Откройте бота и пришлите скриншот или PDF.",
 } as const;
 
 export const submit = {

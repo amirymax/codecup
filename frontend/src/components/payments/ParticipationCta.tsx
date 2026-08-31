@@ -74,6 +74,48 @@ export function ParticipationCta({
   );
 }
 
+/**
+ * Полоска состояния взноса на странице контеста.
+ *
+ * Решение админа должно быть видно сразу при заходе, а не только внутри
+ * окна оплаты: иначе участник не понимает, почему нельзя отправить решение.
+ */
+type Tone = "green" | "blue" | "red";
+
+export function PaymentStatusBanner({ participation }: { participation: Participation }) {
+  const payment = participation.payment;
+  if (!participation.is_paid || !payment) return null;
+
+  const banners: Record<string, { tone: Tone; title: string; hint: string } | null> = {
+    accepted: { tone: "green", title: t.bannerAccepted, hint: t.bannerAcceptedHint },
+    pending: { tone: "blue", title: t.bannerPending, hint: t.bannerPendingHint },
+    rejected: {
+      tone: "red",
+      title: t.bannerRejected,
+      hint: payment.rejection_reason || t.bannerRejectedHint,
+    },
+    awaiting_receipt: payment.expects_receipt_in_bot
+      ? { tone: "blue", title: t.bannerWaiting, hint: t.bannerWaitingHint }
+      : null,
+  };
+
+  const banner = banners[payment.status];
+  if (!banner) return null;
+
+  const tones: Record<Tone, string> = {
+    green: "border-green/25 bg-green/8 text-green-light",
+    blue: "border-blue/20 bg-blue/8 text-blue-pale",
+    red: "border-red/25 bg-red/8 text-red",
+  };
+
+  return (
+    <div className={`rounded-[9px] border px-3.5 py-3 ${tones[banner.tone]}`}>
+      <div className="text-[13.5px] font-semibold">{banner.title}</div>
+      <p className="mt-0.5 text-[12.5px] opacity-80">{banner.hint}</p>
+    </div>
+  );
+}
+
 /** Строка «Взнос за участие» в боковой панели. */
 export function EntryFeeRow({ participation }: { participation: Participation }) {
   if (!participation.is_paid) return null;

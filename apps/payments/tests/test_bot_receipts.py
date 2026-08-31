@@ -178,6 +178,17 @@ def test_the_participant_is_told_about_the_decision(client, no_telegram_calls) -
     assert told and "принят" in told[0]["text"]
 
 
+def test_the_participant_is_told_about_a_rejection_too(client, no_telegram_calls) -> None:
+    AdminFactory(telegram_username="AmiriCode", telegram_id=9006)
+    user = UserFactory(telegram_id=4008)
+    payment = PaymentFactory(user=user, status=PaymentStatus.PENDING)
+
+    _post(client, _decision_update(9006, "pay_no", payment.id))
+
+    told = [p for method, p in no_telegram_calls if p.get("chat_id") == 4008]
+    assert told and "отклонён" in told[0]["text"]
+
+
 def test_a_decision_on_a_missing_payment_is_harmless(client, no_telegram_calls) -> None:
     AdminFactory(telegram_username="AmiriCode", telegram_id=9005)
 
@@ -236,3 +247,56 @@ def test_a_failed_download_still_keeps_the_receipt(client, monkeypatch, no_teleg
     assert payment.status == PaymentStatus.PENDING
     assert payment.telegram_file_id == "AgACphoto"
     assert not payment.receipt
+
+
+# --- сообщение с чеком после решения ---------------------------------------
+
+
+def _edits(calls, method: str) -> list[dict]:
+    return [payload for name, payload in calls if name == method]
+
+
+@pytest.mark.parametrize("action", ["pay_ok", "pay_no"])
+def test_buttons_disappear_once_a_decision_is_made(client, no_telegram_calls, action) -> None:
+    """Пока кнопки на месте, решение можно нажать повторно."""
+    AdminFactory(telegram_username="AmiriCode", telegram_id=9100)
+    payment = PaymentFactory(status=PaymentStatus.PENDING)
+
+    _post(client, _decision_update(9100, action, payment.id))
+
+    cleared = _edits(no_telegram_calls, "editMessageReplyMarkup")
+    assert cleared, "клавиатура не снята"
+    assert cleared[0]["reply_markup"] == {"inline_keyboard": []}
+
+
+def test_the_decision_is_written_into_the_receipt_message(client, no_telegram_calls) -> None:
+    AdminFactory(telegram_username="AmiriCode", telegram_id=9101)
+    payment = PaymentFactory(status=PaymentStatus.PENDING)
+
+    _post(client, _decision_update(9101, "pay_no", payment.id))
+
+    captions = _edits(no_telegram_calls, "editMessageCaption")
+    assert captions and "Отклонено" in captions[0]["caption"]
+
+
+def test_a_text_receipt_message_is_edited_as_text(client, monkeypatch) -> None:
+    """Если чек ушёл текстом, editMessageCaption не подходит — нужен запасной путь."""
+    from apps.telegrambot.client import TelegramClient, TelegramError
+
+    calls: list[tuple[str, dict]] = []
+
+    def fake_call(self, method, **payload):
+        calls.append((method, payload))
+        if method == "editMessageCaption":
+            raise TelegramError("there is no caption in the message to edit")
+        return {}
+
+    monkeypatch.setattr(TelegramClient, "call", fake_call)
+
+    AdminFactory(telegram_username="AmiriCode", telegram_id=9102)
+    payment = PaymentFactory(status=PaymentStatus.PENDING)
+
+    _post(client, _decision_update(9102, "pay_ok", payment.id))
+
+    texts = [p for name, p in calls if name == "editMessageText"]
+    assert texts and "Принято" in texts[0]["text"]

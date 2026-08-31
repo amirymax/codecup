@@ -197,18 +197,41 @@ def _handle_payment_decision(query: dict[str, Any], action: str, payment_id: str
 
     message = query.get("message") or {}
     if message.get("message_id") and message.get("chat"):
-        decision = (
-            messages.ADMIN_DECISION_ACCEPTED
-            if action == "pay_ok"
-            else messages.ADMIN_DECISION_REJECTED
-        )
-        with suppress(TelegramError):
-            client.call(
-                "editMessageCaption",
-                chat_id=message["chat"]["id"],
-                message_id=message["message_id"],
-                caption=f"{messages.receipt_for_admin(payment)}\n\n<b>{decision}</b>",
-                parse_mode="HTML",
-            )
+        _close_decision_message(client, message, payment, action)
 
     notify_participant(payment)
+
+
+def _close_decision_message(client, message: dict[str, Any], payment, action: str) -> None:
+    """Убирает кнопки и дописывает решение к сообщению с чеком."""
+    from .client import TelegramError
+
+    chat_id = message["chat"]["id"]
+    message_id = message["message_id"]
+    decision = (
+        messages.ADMIN_DECISION_ACCEPTED if action == "pay_ok" else messages.ADMIN_DECISION_REJECTED
+    )
+    text = f"{messages.receipt_for_admin(payment)}\n\n<b>{decision}</b>"
+
+    # Сначала снимаем клавиатуру: пока кнопки на месте, решение можно нажать
+    # повторно. editMessageReplyMarkup работает и с медиа, и с текстом.
+    with suppress(TelegramError):
+        client.call(
+            "editMessageReplyMarkup",
+            chat_id=chat_id,
+            message_id=message_id,
+            reply_markup={"inline_keyboard": []},
+        )
+
+    # Чек уходит картинкой или файлом, но при сбое отправки — обычным
+    # текстом. Метод правки у них разный, поэтому пробуем оба.
+    for method, field in (("editMessageCaption", "caption"), ("editMessageText", "text")):
+        try:
+            client.call(
+                method, chat_id=chat_id, message_id=message_id, parse_mode="HTML", **{field: text}
+            )
+            return
+        except TelegramError:
+            continue
+
+    logger.warning("Не удалось отметить решение в сообщении с чеком %s", payment.id)
