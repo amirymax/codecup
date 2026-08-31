@@ -601,6 +601,36 @@
                 }
             }
         },
+        "/api/admin/submissions/{id}/screen/": {
+            "post": {
+                "operationId": "admin_submissions_screen_create",
+                "description": "Перезапуск автоматической проверки по кнопке.",
+                "summary": "Проверить репозиторий заново",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
         "/api/admin/users/": {
             "get": {
                 "operationId": "admin_users_list",
@@ -1791,17 +1821,26 @@
             },
             "AdminSubmissionEnvelope": {
                 "type": "object",
-                "description": "Заявка вместе с навигацией по очереди проверки.",
+                "description": "Заявка, навигация по очереди и итог автоматической проверки.",
                 "properties": {
                     "submission": {
                         "$ref": "#/components/schemas/AdminSubmissionDetail"
                     },
                     "navigation": {
                         "$ref": "#/components/schemas/Navigation"
+                    },
+                    "screening": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Screening"
+                            }
+                        ],
+                        "nullable": true
                     }
                 },
                 "required": [
                     "navigation",
+                    "screening",
                     "submission"
                 ]
             },
@@ -2994,6 +3033,80 @@
                 "required": [
                     "receipt"
                 ]
+            },
+            "Screening": {
+                "type": "object",
+                "description": "Итог автоматической проверки для экрана разбора заявки.",
+                "properties": {
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ScreeningStatusEnum"
+                            }
+                        ],
+                        "readOnly": true,
+                        "title": "Статус"
+                    },
+                    "findings": {
+                        "readOnly": true,
+                        "title": "Находки"
+                    },
+                    "repo_meta": {
+                        "readOnly": true,
+                        "title": "О репозитории"
+                    },
+                    "live_status": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true,
+                        "title": "Ответ демо"
+                    },
+                    "files_scanned": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "title": "Файлов проверено"
+                    },
+                    "high_severity_count": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "has_findings": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "error": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Ошибка"
+                    },
+                    "checked_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true,
+                        "title": "Проверено"
+                    }
+                },
+                "required": [
+                    "checked_at",
+                    "error",
+                    "files_scanned",
+                    "findings",
+                    "has_findings",
+                    "high_severity_count",
+                    "live_status",
+                    "repo_meta",
+                    "status"
+                ]
+            },
+            "ScreeningStatusEnum": {
+                "enum": [
+                    "pending",
+                    "done",
+                    "failed"
+                ],
+                "type": "string",
+                "description": "* `pending` - в очереди\n* `done` - проверено\n* `failed` - не удалось"
             },
             "SubmissionStatusEnum": {
                 "enum": [

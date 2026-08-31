@@ -39,6 +39,7 @@ export type ReviewNavigation = Schemas["Navigation"];
 export type AdminStats = Schemas["AdminStats"];
 export type AdminUser = Schemas["AdminUser"];
 export type AdminPayment = Schemas["AdminPayment"];
+export type Screening = Schemas["Screening"];
 
 /** Формат ошибки, единый для всего API. */
 export interface ApiError {

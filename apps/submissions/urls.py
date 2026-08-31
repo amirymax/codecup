@@ -3,6 +3,7 @@
 from django.urls import path
 
 from .views import (
+    AdminRescreenView,
     AdminSubmissionDetailView,
     AdminSubmissionListView,
     MySubmissionListView,
@@ -30,5 +31,10 @@ admin_urlpatterns = [
         "submissions/<int:pk>/",
         AdminSubmissionDetailView.as_view(),
         name="admin-submission-detail",
+    ),
+    path(
+        "submissions/<int:pk>/screen/",
+        AdminRescreenView.as_view(),
+        name="admin-submission-screen",
     ),
 ]

@@ -163,6 +163,26 @@ export interface paths {
         patch: operations["admin_submissions_partial_update"];
         trace?: never;
     };
+    "/api/admin/submissions/{id}/screen/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Проверить репозиторий заново
+         * @description Перезапуск автоматической проверки по кнопке.
+         */
+        post: operations["admin_submissions_screen_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/users/": {
         parameters: {
             query?: never;
@@ -750,10 +770,11 @@ export interface components {
              */
             readonly created_at: string;
         };
-        /** @description Заявка вместе с навигацией по очереди проверки. */
+        /** @description Заявка, навигация по очереди и итог автоматической проверки. */
         AdminSubmissionEnvelope: {
             submission: components["schemas"]["AdminSubmissionDetail"];
             navigation: components["schemas"]["Navigation"];
+            screening: components["schemas"]["Screening"] | null;
         };
         /** @description Строка в списке заявок админки. */
         AdminSubmissionList: {
@@ -1283,6 +1304,35 @@ export interface components {
             /** Format: binary */
             receipt: string;
         };
+        /** @description Итог автоматической проверки для экрана разбора заявки. */
+        Screening: {
+            /** Статус */
+            readonly status: components["schemas"]["ScreeningStatusEnum"];
+            /** Находки */
+            readonly findings: unknown;
+            /** О репозитории */
+            readonly repo_meta: unknown;
+            /** Ответ демо */
+            readonly live_status: number | null;
+            /** Файлов проверено */
+            readonly files_scanned: number;
+            readonly high_severity_count: number;
+            readonly has_findings: boolean;
+            /** Ошибка */
+            readonly error: string;
+            /**
+             * Проверено
+             * Format: date-time
+             */
+            readonly checked_at: string | null;
+        };
+        /**
+         * @description * `pending` - в очереди
+         *     * `done` - проверено
+         *     * `failed` - не удалось
+         * @enum {string}
+         */
+        ScreeningStatusEnum: "pending" | "done" | "failed";
         /**
          * @description * `draft` - черновик
          *     * `submitted` - отправлено
@@ -1638,6 +1688,26 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AdminSubmissionEnvelope"];
                 };
+            };
+        };
+    };
+    admin_submissions_screen_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

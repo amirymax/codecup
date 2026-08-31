@@ -24,6 +24,7 @@ import type {
   ProfileSubmission,
   PublicProfile,
   ReviewNavigation,
+  Screening,
   User,
 } from "./types";
 
@@ -125,6 +126,7 @@ export async function getAdminSubmissions(
 export async function getAdminSubmission(id: string): Promise<{
   submission: AdminSubmission;
   navigation: ReviewNavigation;
+  screening: Screening | null;
 }> {
   return api.get(`/api/admin/submissions/${id}/`, { cookie: await cookieHeader() });
 }

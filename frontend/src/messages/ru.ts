@@ -233,6 +233,24 @@ export const payments = {
   close: "Отмена",
 } as const;
 
+export const screening = {
+  title: "Автопроверка",
+  clean: "Проблем не найдено",
+  notRun: "Проверка ещё не выполнялась",
+  failed: "Проверку выполнить не удалось",
+  recheck: "Проверить заново",
+  checking: "Проверяем репозиторий…",
+  filesScanned: "файлов проверено",
+  liveOk: "Демо отвечает",
+  liveBad: "Демо отвечает ошибкой",
+  liveDead: "Демо не отвечает",
+  stars: "звёзд",
+  sizeKb: "КБ",
+  severityHigh: "важно",
+  severityMedium: "стоит взглянуть",
+  hint: "Находки ничего не блокируют — решение остаётся за вами.",
+} as const;
+
 export const review = {
   notFoundTitle: "Заявка не найдена",
   notFoundDesc: "Возможно, она была отозвана участником.",

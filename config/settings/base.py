@@ -40,6 +40,7 @@ LOCAL_APPS = [
     "apps.contests",
     "apps.submissions",
     "apps.payments",
+    "apps.screening",
     "apps.telegrambot",
 ]
 
@@ -157,6 +158,13 @@ PAYMENT_REQUISITES = env(
 TELEGRAM_ADMIN_USERNAME = env("TELEGRAM_ADMIN_USERNAME", default="AmiriCode")
 # Что принимаем как чек.
 RECEIPT_MAX_BYTES = env.int("RECEIPT_MAX_BYTES", default=10 * 1024 * 1024)
+# --- Проверка присланных репозиториев ---------------------------------------
+# Без токена GitHub даёт 60 запросов в час на IP — на контест этого не хватит.
+GITHUB_TOKEN = env("GITHUB_TOKEN", default="")
+GITHUB_REQUEST_TIMEOUT = env.int("GITHUB_REQUEST_TIMEOUT", default=20)
+# Архивы больше этого не качаем: проверка не должна съедать диск и время.
+SCREENING_MAX_TARBALL_BYTES = env.int("SCREENING_MAX_TARBALL_BYTES", default=60 * 1024 * 1024)
+
 RECEIPT_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"]
 
 SPECTACULAR_SETTINGS = {
