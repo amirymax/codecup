@@ -29,8 +29,10 @@ export function FeaturedCard({ contest }: { contest: ContestDetail }) {
       <h3 className="text-2xl font-extrabold tracking-tight text-text sm:text-[1.9rem]">
         {contest.title}
       </h3>
-      <p className="mt-3 mb-6 max-w-[640px] text-[15px] leading-relaxed text-muted">
-        {contest.description}
+      {/* На главной — только первый абзац: полный текст ждёт на странице
+          контеста, а карточка должна оставаться карточкой. */}
+      <p className="mt-3 mb-6 max-w-[640px] text-[15px] leading-relaxed whitespace-pre-line text-muted">
+        {firstParagraph(contest.description)}
       </p>
 
       <div className="flex flex-wrap gap-7">
@@ -63,4 +65,8 @@ function Metric({ label, value, className }: { label: string; value: string; cla
       <div className={`font-mono text-xl font-bold ${className}`}>{value}</div>
     </div>
   );
+}
+
+function firstParagraph(text: string): string {
+  return text.trim().split(/\n\s*\n/)[0] ?? "";
 }

@@ -57,7 +57,7 @@ export default async function ContestPage({ params }: Props) {
         <h1 className="text-3xl font-extrabold tracking-tight text-balance sm:text-[2.6rem]">
           {contest.title}
         </h1>
-        <p className="mt-3.5 mb-10 max-w-[680px] text-[15.5px] leading-[1.7] text-muted">
+        <p className="mt-3.5 mb-10 max-w-[680px] text-[15.5px] leading-[1.7] whitespace-pre-line text-muted">
           {contest.description}
         </p>
 
