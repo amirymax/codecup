@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { track } from "@/lib/analytics";
 import { formatMoney } from "@/lib/format";
 import { contest as contestText, participation as t } from "@/messages/ru";
 import type { Participation } from "@/lib/api/types";
@@ -59,7 +60,13 @@ export function ParticipationCta({
 
   return (
     <>
-      <Button className="w-full" onClick={() => setModalOpen(true)}>
+      <Button
+        className="w-full"
+        onClick={() => {
+          track("participate_click");
+          setModalOpen(true);
+        }}
+      >
         {label}
       </Button>
 

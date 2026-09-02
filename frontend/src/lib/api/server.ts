@@ -14,6 +14,7 @@ import type {
   AdminContest,
   AdminPayment,
   AdminStats,
+  AnalyticsSummary,
   AdminSubmission,
   AdminSubmissionRow,
   ContestDetail,
@@ -134,6 +135,12 @@ export async function getAdminSubmission(id: string): Promise<{
 
 export async function getPaymentRequisites(): Promise<PaymentSettings> {
   return api.get<PaymentSettings>("/api/admin/payments/requisites/", {
+    cookie: await cookieHeader(),
+  });
+}
+
+export async function getAnalytics(days: number): Promise<AnalyticsSummary> {
+  return api.get<AnalyticsSummary>(`/api/admin/analytics/?days=${days}`, {
     cookie: await cookieHeader(),
   });
 }

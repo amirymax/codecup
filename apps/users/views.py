@@ -13,6 +13,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.common.exceptions import DomainError
+from apps.common.request import client_ip
 
 from .cookies import clear_auth_cookies, issue_tokens, set_auth_cookies
 from .models import AuthTokenStatus, TelegramAuthToken
@@ -44,7 +45,7 @@ class TelegramAuthStartView(APIView):
             )
 
         token, client_secret = TelegramAuthToken.issue(
-            ip=_client_ip(request),
+            ip=client_ip(request),
             user_agent=request.META.get("HTTP_USER_AGENT", ""),
         )
 
@@ -196,10 +197,3 @@ def _rotate(refresh: RefreshToken) -> str:
     refresh.set_exp()
     refresh.set_iat()
     return str(refresh)
-
-
-def _client_ip(request: Request) -> str | None:
-    forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return request.META.get("REMOTE_ADDR")

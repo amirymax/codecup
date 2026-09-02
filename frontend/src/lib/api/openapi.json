@@ -6,6 +6,43 @@
         "description": "API платформы контестов для разработчиков."
     },
     "paths": {
+        "/api/admin/analytics/": {
+            "get": {
+                "operationId": "admin_analytics_retrieve",
+                "description": "Сводка посещаемости для админки.",
+                "summary": "Посещаемость",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "days",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "За сколько суток, 1–365. По умолчанию 30."
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AnalyticsSummary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/admin/contests/": {
             "get": {
                 "operationId": "admin_contests_list",
@@ -762,6 +799,45 @@
                             }
                         },
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/api/analytics/event/": {
+            "post": {
+                "operationId": "analytics_event_create",
+                "description": "Приём событий из браузера.\n\nОткрыт для всех: посещения гостей — это большая часть трафика, и ради\nних статистика и нужна. От перебора защищает троттлинг.",
+                "summary": "Записать событие",
+                "tags": [
+                    "analytics"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TrackEventRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TrackEventRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TrackEventRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
                     }
                 }
             }
@@ -2063,6 +2139,51 @@
                     "wins_count"
                 ]
             },
+            "AnalyticsSummary": {
+                "type": "object",
+                "description": "Сводка для админки.",
+                "properties": {
+                    "days": {
+                        "type": "integer"
+                    },
+                    "views": {
+                        "type": "integer"
+                    },
+                    "visitors": {
+                        "type": "integer"
+                    },
+                    "logged_in": {
+                        "type": "integer"
+                    },
+                    "daily": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DailyPoint"
+                        }
+                    },
+                    "pages": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PageStat"
+                        }
+                    },
+                    "events": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/EventStat"
+                        }
+                    }
+                },
+                "required": [
+                    "daily",
+                    "days",
+                    "events",
+                    "logged_in",
+                    "pages",
+                    "views",
+                    "visitors"
+                ]
+            },
             "AuthExchangeRequestRequest": {
                 "type": "object",
                 "properties": {
@@ -2397,6 +2518,26 @@
                 "type": "string",
                 "description": "* `USD` - доллар США\n* `TJS` - сомони\n* `RUB` - рубль"
             },
+            "DailyPoint": {
+                "type": "object",
+                "properties": {
+                    "day": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "views": {
+                        "type": "integer"
+                    },
+                    "visitors": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "day",
+                    "views",
+                    "visitors"
+                ]
+            },
             "DecisionEnum": {
                 "enum": [
                     "accept",
@@ -2414,6 +2555,25 @@
                 ],
                 "type": "string",
                 "description": "* `draft` - черновик\n* `submitted` - отправлено\n* `reviewed` - проверено\n* `winner` - победитель"
+            },
+            "EventStat": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "count": {
+                        "type": "integer"
+                    },
+                    "visitors": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "count",
+                    "name",
+                    "visitors"
+                ]
             },
             "FeaturedContest": {
                 "type": "object",
@@ -2665,6 +2825,25 @@
                     "position",
                     "previous_id",
                     "total"
+                ]
+            },
+            "PageStat": {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string"
+                    },
+                    "views": {
+                        "type": "integer"
+                    },
+                    "visitors": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "path",
+                    "views",
+                    "visitors"
                 ]
             },
             "PaginatedAdminContestList": {
@@ -3221,6 +3400,23 @@
                 ],
                 "type": "string",
                 "description": "* `draft` - черновик\n* `submitted` - отправлено\n* `reviewed` - проверено"
+            },
+            "TrackEventRequest": {
+                "type": "object",
+                "description": "То, что присылает браузер.",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "default": "pageview",
+                        "maxLength": 40
+                    },
+                    "path": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 200
+                    }
+                }
             },
             "User": {
                 "type": "object",

@@ -295,3 +295,31 @@ export const common = {
   retry: "Попробовать снова",
   back: "Назад",
 } as const;
+
+export const analytics = {
+  title: "Аналитика",
+  subtitle: "Посещаемость сайта и действия посетителей",
+  views: "Просмотры",
+  visitors: "Уникальные посетители",
+  loggedIn: "Из них вошли",
+  clicksTotal: "Действий",
+  perDay: "По дням",
+  pages: "Страницы",
+  events: "Действия",
+  pageColumn: "Страница",
+  actionColumn: "Действие",
+  viewsColumn: "Просмотры",
+  visitorsColumn: "Посетители",
+  countColumn: "Всего",
+  empty: "Данных пока нет. Они появятся, как только на сайт зайдут.",
+  noEvents: "Кнопки пока никто не нажимал.",
+  days7: "7 дней",
+  days30: "30 дней",
+  days90: "90 дней",
+  visitorsHint: "Посетители считаются анонимно: IP-адреса не сохраняются.",
+} as const;
+
+/** Понятные названия событий. Незнакомое покажем как есть. */
+export const eventLabels: Record<string, string> = {
+  participate_click: "Нажали «Участвовать»",
+};

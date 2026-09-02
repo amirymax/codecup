@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/api/admin/analytics/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Посещаемость
+         * @description Сводка посещаемости для админки.
+         */
+        get: operations["admin_analytics_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/contests/": {
         parameters: {
             query?: never;
@@ -221,6 +241,29 @@ export interface paths {
         get: operations["admin_users_list"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/analytics/event/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Записать событие
+         * @description Приём событий из браузера.
+         *
+         *     Открыт для всех: посещения гостей — это большая часть трафика, и ради
+         *     них статистика и нужна. От перебора защищает троттлинг.
+         */
+        post: operations["analytics_event_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -852,6 +895,16 @@ export interface components {
              */
             readonly created_at: string;
         };
+        /** @description Сводка для админки. */
+        AnalyticsSummary: {
+            days: number;
+            views: number;
+            visitors: number;
+            logged_in: number;
+            daily: components["schemas"]["DailyPoint"][];
+            pages: components["schemas"]["PageStat"][];
+            events: components["schemas"]["EventStat"][];
+        };
         AuthExchangeRequestRequest: {
             nonce: string;
             client_secret: string;
@@ -1010,6 +1063,12 @@ export interface components {
          * @enum {string}
          */
         CurrencyEnum: "USD" | "TJS" | "RUB";
+        DailyPoint: {
+            /** Format: date */
+            day: string;
+            views: number;
+            visitors: number;
+        };
         /**
          * @description * `accept` - accept
          *     * `reject` - reject
@@ -1024,6 +1083,11 @@ export interface components {
          * @enum {string}
          */
         DisplayStatusEnum: "draft" | "submitted" | "reviewed" | "winner";
+        EventStat: {
+            name: string;
+            count: number;
+            visitors: number;
+        };
         /** @description Ответ главной страницы; contest равен null, когда ничего не идёт. */
         FeaturedContest: {
             contest: components["schemas"]["ContestDetail"] | null;
@@ -1138,6 +1202,11 @@ export interface components {
             total: number;
             previous_id: number | null;
             next_id: number | null;
+        };
+        PageStat: {
+            path: string;
+            views: number;
+            visitors: number;
         };
         PaginatedAdminContestList: {
             /** @example 123 */
@@ -1377,6 +1446,13 @@ export interface components {
          * @enum {string}
          */
         SubmissionStatusEnum: "draft" | "submitted" | "reviewed";
+        /** @description То, что присылает браузер. */
+        TrackEventRequest: {
+            /** @default pageview */
+            name: string;
+            /** @default  */
+            path: string;
+        };
         /** @description Профиль текущего пользователя. */
         User: {
             readonly id: number;
@@ -1415,6 +1491,28 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    admin_analytics_retrieve: {
+        parameters: {
+            query?: {
+                /** @description За сколько суток, 1–365. По умолчанию 30. */
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyticsSummary"];
+                };
+            };
+        };
+    };
     admin_contests_list: {
         parameters: {
             query?: {
@@ -1817,6 +1915,30 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PaginatedAdminUserList"];
                 };
+            };
+        };
+    };
+    analytics_event_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["TrackEventRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["TrackEventRequest"];
+                "multipart/form-data": components["schemas"]["TrackEventRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

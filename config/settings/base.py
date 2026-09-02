@@ -42,6 +42,7 @@ LOCAL_APPS = [
     "apps.payments",
     "apps.screening",
     "apps.telegrambot",
+    "apps.analytics",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -110,6 +111,8 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "auth_start": "10/min",
         "auth_status": "120/min",
+        # Событие на каждый переход по страницам: запас нужен, но не бесконечный.
+        "analytics": "120/min",
     },
 }
 

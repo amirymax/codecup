@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { requireAdmin } from "@/lib/adminGuard";
 import { getAdminContests, getAdminStats, getAdminSubmissions } from "@/lib/api/server";
 import { formatMoney, formatNumber, formatShortDate } from "@/lib/format";
-import { admin as t, payments as paymentsText } from "@/messages/ru";
+import { admin as t, analytics as analyticsText, payments as paymentsText } from "@/messages/ru";
 
 export default async function AdminDashboardPage() {
   const user = await requireAdmin("/admin");
@@ -30,6 +30,9 @@ export default async function AdminDashboardPage() {
             <p className="text-sm text-muted-2">{t.subtitle}</p>
           </div>
           <div className="flex flex-wrap gap-3">
+            <Button variant="outline" asChild>
+              <Link href="/admin/analytics">{analyticsText.title}</Link>
+            </Button>
             <Button variant="outline" asChild>
               <Link href="/admin/payments">{paymentsText.title}</Link>
             </Button>

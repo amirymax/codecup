@@ -63,3 +63,14 @@ export interface PaymentSettings {
   requisites: string;
   updated_at: string;
 }
+
+/** Сводка посещаемости для админки. */
+export interface AnalyticsSummary {
+  days: number;
+  views: number;
+  visitors: number;
+  logged_in: number;
+  daily: { day: string; views: number; visitors: number }[];
+  pages: { path: string; views: number; visitors: number }[];
+  events: { name: string; count: number; visitors: number }[];
+}
