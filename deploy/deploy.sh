@@ -31,7 +31,10 @@ systemctl restart codecup-api codecup-web codecup-bot
 
 echo "==> Проверка"
 for _ in $(seq 1 20); do
-    if curl -fsS -H "X-Forwarded-Proto: https" http://127.0.0.1:8000/api/health/ > /dev/null 2>&1; then
+    # Host обязателен: ALLOWED_HOSTS не содержит 127.0.0.1, и без заголовка
+    # Django отвечает 400 — проверка «падала» бы на здоровом сервисе.
+    if curl -fsS -H "Host: api.codecup.tech" -H "X-Forwarded-Proto: https" \
+        http://127.0.0.1:8000/api/health/ > /dev/null 2>&1; then
         echo "api отвечает"
         curl -fsS http://127.0.0.1:3000 > /dev/null 2>&1 && echo "фронтенд отвечает" || echo "ВНИМАНИЕ: фронтенд молчит"
         echo "готово"

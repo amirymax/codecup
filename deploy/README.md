@@ -36,7 +36,14 @@ nano /opt/codecup/.env          # заполнить, ключ: python3 -c "impo
 bash /opt/codecup/deploy/bootstrap.sh
 
 # 4. Сертификаты (DNS уже должен указывать на сервер)
-certbot --nginx -d codecup.tech -d www.codecup.tech -d api.codecup.tech
+# До выпуска на 80 порту стоит codecup-http.conf — он нужен только для
+# проверки Let's Encrypt. После выпуска ставим полный конфиг с TLS.
+certbot certonly --webroot -w /var/www/html \
+    -d codecup.tech -d www.codecup.tech -d api.codecup.tech \
+    --agree-tos -m ВАШ@EMAIL --non-interactive
+
+cp /opt/codecup/deploy/nginx/codecup.conf /etc/nginx/sites-available/codecup.conf
+nginx -t && systemctl reload nginx
 
 # 5. Выкатка
 /opt/codecup/deploy/deploy.sh
