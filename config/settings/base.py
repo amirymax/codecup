@@ -115,9 +115,14 @@ REST_FRAMEWORK = {
 
 AUTH_USER_MODEL = "users.User"
 
+# Access-кука живёт долго намеренно. Обновлять её через /api/auth/refresh/
+# некому: refresh-кука ограничена путём /api/auth/ на домене API, поэтому до
+# сервера Next.js, который рендерит страницы, она вообще не доходит. Пока
+# access жил 15 минут, пользователь становился гостем через четверть часа —
+# при живой refresh-куке на две недели.
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=90),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": True,

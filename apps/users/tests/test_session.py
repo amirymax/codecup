@@ -129,3 +129,28 @@ def test_access_cookie_of_a_deleted_user_is_treated_as_a_guest(client: APIClient
 
     assert client.get(reverse("contest-featured")).status_code == 200
     assert client.get(reverse("auth-me")).status_code == 401
+
+
+# --- Длина сессии -----------------------------------------------------------
+#
+# Вход через Telegram — единственный способ попасть на сайт, и повторять его
+# каждые 15 минут никто не станет. Кука должна пережить хотя бы месяц.
+
+MONTH_IN_SECONDS = 30 * 24 * 60 * 60
+
+
+def test_access_cookie_lives_at_least_a_month(client: APIClient) -> None:
+    _login(client)
+
+    response = client.post(reverse("auth-refresh"))
+
+    cookie = response.cookies[settings.AUTH_COOKIE_ACCESS_NAME]
+    assert int(cookie["max-age"]) >= MONTH_IN_SECONDS
+
+
+def test_refresh_cookie_outlives_the_access_cookie(client: APIClient) -> None:
+    """Иначе обновлять сессию будет уже нечем."""
+    access = settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"]
+    refresh = settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"]
+
+    assert refresh > access
