@@ -24,6 +24,10 @@ if [ ! -f .env ]; then
     echo "СТОП: создайте /opt/codecup/.env (см. .env.prod.example)"
     exit 1
 fi
+if [ ! -f .env.frontend ]; then
+    echo "СТОП: создайте /opt/codecup/.env.frontend (см. .env.frontend.example)"
+    exit 1
+fi
 
 echo "==> Сервисы"
 cp deploy/systemd/*.service /etc/systemd/system/

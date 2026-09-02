@@ -114,3 +114,5 @@ crontab -e
 | Бот молчит | `systemctl status codecup-bot`, проверьте `TELEGRAM_BOT_TOKEN` |
 | `502` от nginx | сервис не поднялся: `journalctl -u codecup-api -n 50` |
 | Нет стилей | `collectstatic` не отработал — запустите `deploy.sh` заново |
+| «Application error: a server-side exception» на всех страницах | сервер Next.js не достучался до API: проверьте `INTERNAL_API_URL` в `.env.frontend` и `journalctl -u codecup-web -n 30` |
+| `fatal: detected dubious ownership` при выкатке | `/opt/codecup` принадлежит не root: `chown -R root:root /opt/codecup` |

@@ -18,6 +18,11 @@ echo "==> Статика"
 .venv/bin/python manage.py collectstatic --noinput --clear > /dev/null
 
 echo "==> Сборка фронтенда"
+# NEXT_PUBLIC_* вшивается в сборку, поэтому переменные нужны уже здесь,
+# а не только в systemd при запуске.
+set -a
+. /opt/codecup/.env.frontend
+set +a
 cd frontend
 npm ci --silent
 npm run build > /dev/null
