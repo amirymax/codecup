@@ -1,31 +1,45 @@
 #!/usr/bin/env bash
-# Выкатка новой версии. Запускать из каталога проекта на сервере.
+# Выкатка на сервере. Запускается вручную или из GitHub Actions по push в main.
 set -euo pipefail
 
-cd "$(dirname "$0")/.."
+cd /opt/codecup
 
-echo "==> Забираю изменения"
-git pull --ff-only
+echo "==> Забираю код"
+git fetch --quiet origin main
+git reset --hard --quiet origin/main
 
-echo "==> Собираю образы"
-docker compose -f docker-compose.prod.yml build
+echo "==> Зависимости backend"
+.venv/bin/pip install --quiet -r requirements/prod.txt
 
-echo "==> Применяю миграции"
-docker compose -f docker-compose.prod.yml run --rm backend python manage.py migrate
+echo "==> Миграции"
+.venv/bin/python manage.py migrate --noinput
 
-echo "==> Перезапускаю сервисы"
-docker compose -f docker-compose.prod.yml up -d
+echo "==> Статика"
+.venv/bin/python manage.py collectstatic --noinput --clear > /dev/null
 
-echo "==> Жду готовности backend"
-for _ in $(seq 1 30); do
-    if docker compose -f docker-compose.prod.yml exec -T backend \
-        curl -fs http://localhost:8000/api/health/ > /dev/null 2>&1; then
+echo "==> Сборка фронтенда"
+cd frontend
+npm ci --silent
+npm run build > /dev/null
+# standalone-сборка не копирует статику и public — переносим руками.
+cp -r .next/static .next/standalone/.next/static
+[ -d public ] && cp -r public .next/standalone/public
+cd ..
+
+echo "==> Перезапуск"
+systemctl restart codecup-api codecup-web codecup-bot
+
+echo "==> Проверка"
+for _ in $(seq 1 20); do
+    if curl -fsS -H "X-Forwarded-Proto: https" http://127.0.0.1:8000/api/health/ > /dev/null 2>&1; then
+        echo "api отвечает"
+        curl -fsS http://127.0.0.1:3000 > /dev/null 2>&1 && echo "фронтенд отвечает" || echo "ВНИМАНИЕ: фронтенд молчит"
         echo "готово"
         exit 0
     fi
     sleep 2
 done
 
-echo "ОШИБКА: backend не отвечает, показываю логи"
-docker compose -f docker-compose.prod.yml logs --tail=50 backend
+echo "ОШИБКА: api не поднялся"
+systemctl status codecup-api --no-pager --lines=20 || true
 exit 1

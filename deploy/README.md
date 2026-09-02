@@ -1,129 +1,101 @@
 # Развёртывание CodeCup.tech
 
-Backend, фронтенд и nginx работают в контейнерах. **Postgres в контейнеры не
-входит** — на сервере он устанавливается отдельно, со своим обновлением и
-бэкапом. Так база переживает пересборку приложения, а её данные не зависят
-от жизни Docker-томов.
+Всё работает прямо на сервере, без контейнеров: Postgres из пакетов Ubuntu,
+Django под gunicorn, Next.js под node, всё это — systemd-сервисы за nginx.
 
 ```
-            ┌────────── nginx (443) ──────────┐
-            │                                  │
-   codecup.tech                        api.codecup.tech
-            │                                  │
-       frontend:3000                      backend:8000
-     (Next.js standalone)              (Django + gunicorn)
-                                              │
-                                      Postgres на хосте
+        nginx (80/443)
+        ├── codecup.tech      → 127.0.0.1:3000   codecup-web   (Next.js)
+        └── api.codecup.tech  → 127.0.0.1:8000   codecup-api   (gunicorn)
+                                                 codecup-bot   (Telegram)
+                                                 Postgres 16   (localhost)
 ```
 
 Домены соседние не случайно: кука сессии выставлена с `SameSite=Lax` и
-`AUTH_COOKIE_DOMAIN=.codecup.tech`, поэтому она уходит и на сайт, и на API.
-Разнести их на разные домены нельзя — вход перестанет работать.
+`AUTH_COOKIE_DOMAIN=.codecup.tech`, поэтому уходит и на сайт, и на API.
+Развести их на разные домены нельзя — вход перестанет работать.
 
 ## Первая установка
 
-### 1. Postgres на сервере
+Предполагается Ubuntu 24.04 с установленными postgresql, nginx, certbot,
+node 22 и python3-venv.
 
 ```bash
-sudo apt update && sudo apt install -y postgresql
-sudo -u postgres psql <<'SQL'
-CREATE USER codecup WITH PASSWORD 'ПРИДУМАЙТЕ_ПАРОЛЬ';
-CREATE DATABASE codecup OWNER codecup;
-SQL
-```
+# 1. База
+sudo -u postgres psql -c "CREATE USER codecup WITH PASSWORD 'пароль';"
+sudo -u postgres createdb -O codecup codecup
 
-Чтобы контейнер видел базу, Postgres должен слушать адрес docker-моста:
+# 2. Код и сервисы
+export REPO=git@github.com:amirymax/codecup.git
+curl -fsSL https://raw.githubusercontent.com/amirymax/codecup/main/deploy/bootstrap.sh | bash
+# остановится и попросит создать /opt/codecup/.env
 
-```bash
-# /etc/postgresql/*/main/postgresql.conf
-listen_addresses = 'localhost,172.17.0.1'
+# 3. Настройки
+cp /opt/codecup/.env.prod.example /opt/codecup/.env
+nano /opt/codecup/.env          # заполнить, ключ: python3 -c "import secrets; print(secrets.token_urlsafe(64))"
+bash /opt/codecup/deploy/bootstrap.sh
 
-# /etc/postgresql/*/main/pg_hba.conf
-host  codecup  codecup  172.16.0.0/12  scram-sha-256
-```
+# 4. Сертификаты (DNS уже должен указывать на сервер)
+certbot --nginx -d codecup.tech -d www.codecup.tech -d api.codecup.tech
 
-```bash
-sudo systemctl restart postgresql
-```
+# 5. Выкатка
+/opt/codecup/deploy/deploy.sh
 
-### 2. Код и настройки
-
-```bash
-sudo mkdir -p /opt/codecup && sudo chown "$USER" /opt/codecup
-git clone https://github.com/amirymax/codecup.git /opt/codecup
-cd /opt/codecup
-cp .env.prod.example .env.prod
-```
-
-Заполните `.env.prod`. Ключ Django генерируется так:
-
-```bash
-python3 -c "import secrets; print(secrets.token_urlsafe(64))"
-```
-
-Тем же способом получите `TELEGRAM_WEBHOOK_SECRET`.
-
-### 3. Сертификаты
-
-```bash
-sudo apt install -y certbot
-sudo certbot certonly --standalone -d codecup.tech -d www.codecup.tech -d api.codecup.tech
-mkdir -p deploy/certs
-sudo cp /etc/letsencrypt/live/codecup.tech/fullchain.pem deploy/certs/
-sudo cp /etc/letsencrypt/live/codecup.tech/privkey.pem   deploy/certs/
-```
-
-Продление — в cron, с копированием файлов и перезапуском nginx:
-
-```
-0 4 1 * * certbot renew --quiet && cp /etc/letsencrypt/live/codecup.tech/*.pem /opt/codecup/deploy/certs/ && docker compose -f /opt/codecup/docker-compose.prod.yml restart nginx
-```
-
-### 4. Запуск
-
-```bash
-docker compose -f docker-compose.prod.yml build
-docker compose -f docker-compose.prod.yml run --rm backend python manage.py migrate
-docker compose -f docker-compose.prod.yml run --rm backend python manage.py createsuperuser
-docker compose -f docker-compose.prod.yml up -d
-```
-
-### 5. Вебхук Telegram
-
-```bash
-docker compose -f docker-compose.prod.yml exec backend \
-    python manage.py set_webhook https://api.codecup.tech
+# 6. Администратор
+cd /opt/codecup && .venv/bin/python manage.py make_admin --telegram-username AmiriCode
 ```
 
 Проверка: `curl https://api.codecup.tech/api/health/` → `{"status":"ok",...}`
 
-### 6. Бэкапы
+## Обновление
+
+Пуш в `main` → CI → автоматическая выкатка (`.github/workflows/deploy.yml`).
+Выкатывается только то, что прошло проверки: deploy запускается по успешному
+завершению CI, а не по самому пушу.
+
+Вручную — то же самое:
 
 ```bash
-sudo crontab -e
+/opt/codecup/deploy/deploy.sh
+```
+
+Скрипт забирает код, ставит зависимости, применяет миграции, собирает статику
+и фронтенд, перезапускает сервисы и ждёт ответа от `/api/health/`.
+
+### Секреты в GitHub
+
+Для автовыкатки в репозитории нужны три секрета:
+
+| Секрет | Значение |
+|---|---|
+| `SERVER_HOST` | 178.105.106.8 |
+| `SERVER_USER` | root |
+| `SERVER_SSH_KEY` | приватный ключ, публичная часть которого лежит в `~/.ssh/authorized_keys` на сервере |
+
+И **deploy key** самого репозитория (Settings → Deploy keys, read-only) —
+публичная часть `/root/.ssh/codecup_deploy.pub` с сервера, чтобы `git pull`
+работал.
+
+## Сервисы
+
+```bash
+systemctl status codecup-api codecup-web codecup-bot
+journalctl -u codecup-api -f
+systemctl restart codecup-bot
+```
+
+## Бэкапы
+
+```bash
+crontab -e
 # 0 3 * * * /opt/codecup/deploy/backup.sh >> /var/log/codecup-backup.log 2>&1
 ```
 
-Скрипт хранит дампы 14 дней и завершается ошибкой, если дамп оказался
-пустым, — молча положить в архив нечитаемый файл хуже, чем упасть.
-
-## Обновление
+## Автопроверка заявок
 
 ```bash
-cd /opt/codecup && ./deploy/deploy.sh
-```
-
-Скрипт забирает изменения, пересобирает образы, применяет миграции,
-перезапускает сервисы и ждёт, пока backend ответит на `/api/health/`.
-Если не дождался — показывает логи и завершается с ошибкой.
-
-## Восстановление из бэкапа
-
-```bash
-docker compose -f docker-compose.prod.yml stop backend frontend
-gunzip -c /var/backups/codecup/codecup_ГГГГ-ММ-ДД_ЧЧ-ММ.sql.gz | \
-    sudo -u postgres psql codecup
-docker compose -f docker-compose.prod.yml start backend frontend
+crontab -e
+# */10 * * * * cd /opt/codecup && .venv/bin/python manage.py screen_submissions >> /var/log/codecup-screening.log 2>&1
 ```
 
 ## Если что-то не работает
@@ -131,13 +103,7 @@ docker compose -f docker-compose.prod.yml start backend frontend
 | Симптом | Причина |
 |---|---|
 | Бесконечный редирект на https | nginx не передаёт `X-Forwarded-Proto` |
-| Вход не сохраняется | `AUTH_COOKIE_DOMAIN` не совпадает с доменом, или сайт открыт по http |
-| Бот молчит | вебхук не зарегистрирован либо `TELEGRAM_WEBHOOK_SECRET` разъехался с тем, что в `.env.prod` |
-| `502` от nginx | backend не поднялся: `docker compose -f docker-compose.prod.yml logs backend` |
-| Нет стилей в админке | образ собран без `collectstatic` — пересоберите backend |
-
-Проверка настроек безопасности:
-
-```bash
-docker compose -f docker-compose.prod.yml exec backend python manage.py check --deploy
-```
+| Вход не сохраняется | `AUTH_COOKIE_DOMAIN` не совпадает с доменом |
+| Бот молчит | `systemctl status codecup-bot`, проверьте `TELEGRAM_BOT_TOKEN` |
+| `502` от nginx | сервис не поднялся: `journalctl -u codecup-api -n 50` |
+| Нет стилей | `collectstatic` не отработал — запустите `deploy.sh` заново |

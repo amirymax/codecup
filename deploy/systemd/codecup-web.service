@@ -1,0 +1,18 @@
+[Unit]
+Description=CodeCup frontend (Next.js)
+After=network.target codecup-api.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/codecup/frontend
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOSTNAME=127.0.0.1
+EnvironmentFile=/opt/codecup/.env.frontend
+ExecStart=/usr/bin/node .next/standalone/server.js
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
