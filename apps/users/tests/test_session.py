@@ -94,3 +94,38 @@ def test_garbage_access_cookie_is_rejected(client: APIClient) -> None:
     client.cookies[settings.AUTH_COOKIE_ACCESS_NAME] = "not-a-token"
 
     assert client.get(reverse("auth-me")).status_code == 401
+
+
+# --- Просроченная кука ------------------------------------------------------
+#
+# Access-токен живёт 15 минут, а браузер шлёт куку на каждый запрос. Если
+# считать испорченную куку ошибкой, публичные адреса начинают отвечать 401,
+# и серверный рендер главной падает у всех, кто когда-то входил.
+
+
+def test_broken_access_cookie_is_treated_as_a_guest_on_public_endpoints(
+    client: APIClient,
+) -> None:
+    client.cookies[settings.AUTH_COOKIE_ACCESS_NAME] = "not-a-token"
+
+    response = client.get(reverse("contest-featured"))
+
+    assert response.status_code == 200
+
+
+def test_broken_access_cookie_still_gets_401_on_protected_endpoints(
+    client: APIClient,
+) -> None:
+    client.cookies[settings.AUTH_COOKIE_ACCESS_NAME] = "not-a-token"
+
+    response = client.get(reverse("auth-me"))
+
+    assert response.status_code == 401
+
+
+def test_access_cookie_of_a_deleted_user_is_treated_as_a_guest(client: APIClient) -> None:
+    user = _login(client)
+    user.delete()
+
+    assert client.get(reverse("contest-featured")).status_code == 200
+    assert client.get(reverse("auth-me")).status_code == 401
