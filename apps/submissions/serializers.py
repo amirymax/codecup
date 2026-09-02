@@ -3,6 +3,7 @@ from __future__ import annotations
 from rest_framework import serializers
 
 from apps.common.serializers import NavigationSerializer
+from apps.screening.serializers import ScreeningSerializer
 from apps.users.serializers import UserSerializer
 
 from .models import (
@@ -223,10 +224,11 @@ class PublicProfileSerializer(serializers.Serializer):
 
 
 class AdminSubmissionEnvelopeSerializer(serializers.Serializer):
-    """Заявка вместе с навигацией по очереди проверки."""
+    """Заявка, навигация по очереди и итог автоматической проверки."""
 
     submission = AdminSubmissionDetailSerializer()
     navigation = NavigationSerializer()
+    screening = ScreeningSerializer(allow_null=True)
 
 
 def _reraise(validator, value: str) -> None:

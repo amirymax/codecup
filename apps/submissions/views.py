@@ -11,6 +11,8 @@ from rest_framework.views import APIView
 
 from apps.common.exceptions import DomainError
 from apps.contests.models import Contest
+from apps.payments.services import can_submit
+from apps.screening.serializers import ScreeningSerializer
 
 from .models import Submission, SubmissionStatus
 from .serializers import (
@@ -24,13 +26,21 @@ from .serializers import (
 )
 
 
-def _open_contest(slug: str) -> Contest:
+def _open_contest(slug: str, user=None) -> Contest:
     """Контест, в который сейчас можно отправлять решения."""
     contest = get_object_or_404(Contest.objects.public(), slug=slug)
     if not contest.accepts_submissions:
         raise DomainError(
             "Приём заявок на этот контест закрыт.",
             code="contest_closed",
+            slug=contest.slug,
+        )
+
+    # В платном контесте решение принимается только после принятого взноса.
+    if user is not None and not can_submit(contest, user):
+        raise DomainError(
+            "Сначала оплатите участие и дождитесь подтверждения.",
+            code="entry_fee_required",
             slug=contest.slug,
         )
     return contest
@@ -55,7 +65,7 @@ class MySubmissionView(APIView):
         responses={200: MySubmissionEnvelopeSerializer},
     )
     def put(self, request: Request, slug: str) -> Response:
-        contest = _open_contest(slug)
+        contest = _open_contest(slug, request.user)
         instance = Submission.objects.filter(contest=contest, user=request.user).first()
 
         serializer = MySubmissionSerializer(instance, data=request.data, partial=True)
@@ -77,7 +87,7 @@ class SubmitSolutionView(APIView):
         responses={200: MySubmissionEnvelopeSerializer},
     )
     def post(self, request: Request, slug: str) -> Response:
-        contest = _open_contest(slug)
+        contest = _open_contest(slug, request.user)
         instance = Submission.objects.filter(contest=contest, user=request.user).first()
 
         # require_complete включает обязательность ссылок: при отправке
@@ -202,9 +212,11 @@ class AdminSubmissionDetailView(APIView):
             "previous_id": queue[index - 1] if index else None,
             "next_id": queue[index + 1] if index is not None and index + 1 < len(queue) else None,
         }
+        screening = getattr(submission, "screening", None)
         return {
             "submission": AdminSubmissionDetailSerializer(submission).data,
             "navigation": navigation,
+            "screening": ScreeningSerializer(screening).data if screening else None,
         }
 
 
@@ -233,3 +245,18 @@ class PublicProfileView(APIView):
                 "submissions": ProfileSubmissionSerializer(submissions, many=True).data,
             }
         )
+
+
+class AdminRescreenView(APIView):
+    """Перезапуск автоматической проверки по кнопке."""
+
+    permission_classes = [IsAdminUser]
+
+    @extend_schema(summary="Проверить репозиторий заново", request=None, responses={200: None})
+    def post(self, request: Request, pk: int) -> Response:
+        from apps.screening.serializers import ScreeningSerializer as Serializer
+        from apps.screening.service import screen_submission
+
+        submission = get_object_or_404(Submission.objects.select_related("contest"), pk=pk)
+        screening = screen_submission(submission)
+        return Response(Serializer(screening).data)

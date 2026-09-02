@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Быстрые проверки перед отправкой в репозиторий.
+# Ставится командой `make hooks`, снимается удалением .git/hooks/pre-push.
+#
+# Здесь только backend: он проверяется за пару секунд. Сборку фронтенда
+# оставляем CI — держать её в хуке слишком долго, и push начнут обходить
+# через --no-verify.
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+if [ ! -x .venv/bin/ruff ]; then
+    echo "pre-push: нет .venv, пропускаю проверки (make install)"
+    exit 0
+fi
+
+echo "pre-push: стиль…"
+.venv/bin/ruff check . --quiet
+.venv/bin/ruff format --check . --quiet
+
+echo "pre-push: тесты…"
+.venv/bin/pytest -q --no-header
+
+echo "pre-push: готово"

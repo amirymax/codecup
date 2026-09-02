@@ -6,9 +6,13 @@ import { Footer } from "@/components/Footer";
 import { ArrowLeftIcon, CheckIcon } from "@/components/Icons";
 import { Navbar } from "@/components/Navbar";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Button } from "@/components/ui/button";
 import { ApiRequestError } from "@/lib/api/errors";
-import { getContest, getCurrentUser } from "@/lib/api/server";
+import { getContest, getCurrentUser, getParticipation } from "@/lib/api/server";
+import {
+  EntryFeeRow,
+  ParticipationCta,
+  PaymentStatusBanner,
+} from "@/components/payments/ParticipationCta";
 import { formatMoney, formatNumber, formatRelative, formatShortDate } from "@/lib/format";
 import { contest as t, statusLabels } from "@/messages/ru";
 
@@ -29,6 +33,7 @@ export default async function ContestPage({ params }: Props) {
 
   const submission = contest.my_submission;
   const isOver = contest.state === "ended";
+  const participation = await getParticipation(slug);
 
   return (
     <div className="min-h-screen bg-ink text-text">
@@ -137,12 +142,26 @@ export default async function ContestPage({ params }: Props) {
                 </span>
               </div>
 
-              <ContestCta
-                slug={contest.slug}
-                isOver={isOver}
-                isAuthenticated={Boolean(user)}
-                hasSubmission={Boolean(submission)}
-              />
+              <EntryFeeRow participation={participation} />
+
+              <PaymentStatusBanner participation={participation} />
+
+              {isOver ? (
+                <div
+                  className="flex cursor-not-allowed items-center justify-center rounded-[9px]
+                             border border-line-2 bg-surface-3 px-4 py-3.5 text-[14.5px]
+                             font-bold text-muted-2"
+                >
+                  {t.closedCta}
+                </div>
+              ) : (
+                <ParticipationCta
+                  slug={contest.slug}
+                  participation={participation}
+                  isAuthenticated={Boolean(user)}
+                  hasSubmission={Boolean(submission)}
+                />
+              )}
             </div>
           </aside>
         </div>
@@ -150,43 +169,5 @@ export default async function ContestPage({ params }: Props) {
 
       <Footer />
     </div>
-  );
-}
-
-/** Кнопка меняется по состоянию контеста и наличию заявки — как в макете. */
-function ContestCta({
-  slug,
-  isOver,
-  isAuthenticated,
-  hasSubmission,
-}: {
-  slug: string;
-  isOver: boolean;
-  isAuthenticated: boolean;
-  hasSubmission: boolean;
-}) {
-  if (isOver) {
-    return (
-      <div
-        className="flex cursor-not-allowed items-center justify-center rounded-[9px] border
-                   border-line-2 bg-surface-3 px-4 py-3.5 text-[14.5px] font-bold text-muted-2"
-      >
-        {t.closedCta}
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <Button className="w-full" asChild>
-        <Link href={`/login?next=/contests/${slug}`}>{t.loginToSubmit}</Link>
-      </Button>
-    );
-  }
-
-  return (
-    <Button className="w-full" variant={hasSubmission ? "outline" : "primary"} asChild>
-      <Link href={`/contests/${slug}/submit`}>{hasSubmission ? t.editCta : t.submitCta}</Link>
-    </Button>
   );
 }

@@ -12,6 +12,7 @@ import { api } from "./client";
 import { ApiRequestError } from "./errors";
 import type {
   AdminContest,
+  AdminPayment,
   AdminStats,
   AdminSubmission,
   AdminSubmissionRow,
@@ -19,9 +20,11 @@ import type {
   FeaturedContest,
   MySubmission,
   Paginated,
+  Participation,
   ProfileSubmission,
   PublicProfile,
   ReviewNavigation,
+  Screening,
   User,
 } from "./types";
 
@@ -51,6 +54,12 @@ export async function getFeaturedContest(): Promise<FeaturedContest> {
 
 export async function getContest(slug: string): Promise<ContestDetail> {
   return api.get<ContestDetail>(`/api/contests/${slug}/`, { cookie: await cookieHeader() });
+}
+
+export async function getParticipation(slug: string): Promise<Participation> {
+  return api.get<Participation>(`/api/contests/${slug}/participation/`, {
+    cookie: await cookieHeader(),
+  });
 }
 
 export async function getMySubmissions(): Promise<Paginated<ProfileSubmission>> {
@@ -95,6 +104,15 @@ export async function getAdminContest(id: string): Promise<AdminContest> {
   return api.get<AdminContest>(`/api/admin/contests/${id}/`, { cookie: await cookieHeader() });
 }
 
+export async function getAdminPayments(
+  query: Record<string, string> = {},
+): Promise<Paginated<AdminPayment>> {
+  const search = new URLSearchParams(query).toString();
+  return api.get<Paginated<AdminPayment>>(`/api/admin/payments/${search ? `?${search}` : ""}`, {
+    cookie: await cookieHeader(),
+  });
+}
+
 export async function getAdminSubmissions(
   query: Record<string, string> = {},
 ): Promise<Paginated<AdminSubmissionRow>> {
@@ -108,6 +126,7 @@ export async function getAdminSubmissions(
 export async function getAdminSubmission(id: string): Promise<{
   submission: AdminSubmission;
   navigation: ReviewNavigation;
+  screening: Screening | null;
 }> {
   return api.get(`/api/admin/submissions/${id}/`, { cookie: await cookieHeader() });
 }

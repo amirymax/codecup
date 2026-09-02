@@ -6,6 +6,7 @@ import { ArrowLeftIcon, ExternalIcon } from "@/components/Icons";
 import { Navbar } from "@/components/Navbar";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ReviewPanel } from "@/components/admin/ReviewPanel";
+import { ScreeningPanel } from "@/components/admin/ScreeningPanel";
 import { requireAdmin } from "@/lib/adminGuard";
 import { ApiRequestError } from "@/lib/api/errors";
 import { getAdminSubmission } from "@/lib/api/server";
@@ -25,7 +26,7 @@ export default async function ReviewSubmissionPage({ params }: Props) {
     throw error;
   });
 
-  const { submission, navigation } = data;
+  const { submission, navigation, screening } = data;
 
   return (
     <div className="min-h-screen bg-ink text-text">
@@ -64,6 +65,8 @@ export default async function ReviewSubmissionPage({ params }: Props) {
               </div>
               <StatusBadge status={submission.display_status} className="ml-auto" />
             </div>
+
+            <ScreeningPanel submissionId={submission.id} screening={screening ?? null} />
 
             <div className="mb-7 flex flex-col gap-3">
               <ResourceLink href={submission.github_url} label={submission.repo_name} />

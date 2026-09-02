@@ -39,6 +39,8 @@ class ContestListSerializer(serializers.ModelSerializer):
             "deadline",
             "seconds_left",
             "participants_count",
+            "entry_fee",
+            "is_paid",
             "state",
         ]
         read_only_fields = fields
@@ -118,6 +120,8 @@ class AdminContestSerializer(serializers.ModelSerializer):
             "requirements",
             "prize_pool",
             "currency",
+            "entry_fee",
+            "is_paid",
             "starts_at",
             "deadline",
             "status",
@@ -126,7 +130,15 @@ class AdminContestSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "number", "display_number", "state", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "number",
+            "display_number",
+            "state",
+            "is_paid",
+            "created_at",
+            "updated_at",
+        ]
 
     def validate_requirements(self, value):
         validate_requirements(value)
