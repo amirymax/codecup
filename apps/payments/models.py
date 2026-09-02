@@ -9,6 +9,50 @@ def receipt_path(instance: EntryPayment, filename: str) -> str:
     return f"receipts/{instance.contest_id}/{instance.user_id}/{filename}"
 
 
+class PaymentSettings(models.Model):
+    """Реквизиты для оплаты — одни на всю площадку.
+
+    Лежат в базе, а не в .env: менять их должен администратор с сайта, а не
+    тот, у кого есть доступ к серверу. Пустое поле означает «не задано» —
+    тогда показываем запасной текст из настроек.
+    """
+
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    requisites = models.TextField("реквизиты", blank=True)
+    updated_at = models.DateTimeField("обновлены", auto_now=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="кто изменил",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        verbose_name = "реквизиты для оплаты"
+        verbose_name_plural = "реквизиты для оплаты"
+
+    def __str__(self) -> str:
+        return "Реквизиты для оплаты"
+
+    def save(self, *args, **kwargs):
+        # Строка всегда одна: второй набор реквизитов означал бы, что часть
+        # участников платит не туда.
+        self.id = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls) -> PaymentSettings:
+        """Текущие реквизиты. На чтении ничего не создаёт."""
+        return cls.objects.filter(pk=1).first() or cls()
+
+    @property
+    def effective_requisites(self) -> str:
+        """Что показать участнику: заданное админом или запасной текст."""
+        return self.requisites.strip() or settings.PAYMENT_REQUISITES
+
+
 class PaymentStatus(models.TextChoices):
     AWAITING_RECEIPT = "awaiting_receipt", "ждём чек"
     PENDING = "pending", "на проверке"

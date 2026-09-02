@@ -3,7 +3,7 @@ from __future__ import annotations
 from django.conf import settings
 from rest_framework import serializers
 
-from .models import EntryPayment, PaymentStatus
+from .models import EntryPayment, PaymentSettings, PaymentStatus
 
 
 class MyPaymentSerializer(serializers.ModelSerializer):
@@ -114,3 +114,21 @@ __all__ = [
     "PaymentStatus",
     "ReceiptUploadSerializer",
 ]
+
+
+class PaymentSettingsSerializer(serializers.ModelSerializer):
+    """Реквизиты в админке."""
+
+    requisites = serializers.CharField(allow_blank=True, max_length=2000)
+
+    class Meta:
+        model = PaymentSettings
+        fields = ["requisites", "updated_at"]
+        read_only_fields = ["updated_at"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Админ должен видеть ровно тот текст, который видит участник,
+        # включая запасной — иначе он правит пустоту и не понимает, почему.
+        data["requisites"] = instance.effective_requisites
+        return data

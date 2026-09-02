@@ -12,11 +12,12 @@ from rest_framework.views import APIView
 from apps.common.exceptions import DomainError
 from apps.contests.models import Contest
 
-from .models import EntryPayment, PaymentStatus
+from .models import EntryPayment, PaymentSettings, PaymentStatus
 from .serializers import (
     AdminPaymentSerializer,
     ParticipationSerializer,
     PaymentDecisionSerializer,
+    PaymentSettingsSerializer,
     ReceiptUploadSerializer,
 )
 from .services import get_or_create_payment, participation_state
@@ -159,3 +160,27 @@ def _notify_participant(payment: EntryPayment) -> None:
     from apps.telegrambot.payments import notify_participant
 
     notify_participant(payment)
+
+
+class AdminPaymentRequisitesView(APIView):
+    """Реквизиты для оплаты: посмотреть и изменить прямо из админки."""
+
+    permission_classes = [IsAdminUser]
+
+    @extend_schema(
+        summary="Реквизиты для оплаты",
+        responses={200: PaymentSettingsSerializer},
+    )
+    def get(self, request: Request) -> Response:
+        return Response(PaymentSettingsSerializer(PaymentSettings.load()).data)
+
+    @extend_schema(
+        summary="Изменить реквизиты для оплаты",
+        request=PaymentSettingsSerializer,
+        responses={200: PaymentSettingsSerializer},
+    )
+    def put(self, request: Request) -> Response:
+        serializer = PaymentSettingsSerializer(PaymentSettings.load(), data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(updated_by=request.user)
+        return Response(serializer.data)

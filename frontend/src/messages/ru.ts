@@ -231,6 +231,14 @@ export const payments = {
   awaiting: "Ждём чек",
   saving: "Сохраняем…",
   close: "Отмена",
+  requisitesTitle: "Реквизиты для оплаты",
+  requisitesHint:
+    "Их видит каждый участник платного контеста. Переносы строк сохраняются.",
+  requisitesPlaceholder:
+    "Карта: 0000 0000 0000 0000\nПолучатель: имя\nКомментарий: ваш @username",
+  requisitesSave: "Сохранить",
+  requisitesSaved: "Сохранено",
+  requisitesFailed: "Не удалось сохранить. Попробуйте ещё раз.",
 } as const;
 
 export const screening = {

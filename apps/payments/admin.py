@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import EntryPayment
+from .models import EntryPayment, PaymentSettings
 
 
 @admin.register(EntryPayment)
@@ -16,3 +16,11 @@ class EntryPaymentAdmin(admin.ModelAdmin):
         "telegram_file_id",
     ]
     autocomplete_fields = ["user", "contest"]
+
+
+@admin.register(PaymentSettings)
+class PaymentSettingsAdmin(admin.ModelAdmin):
+    """Обычно правится с сайта, здесь — на случай, если сайт недоступен."""
+
+    list_display = ["__str__", "updated_at", "updated_by"]
+    readonly_fields = ["updated_at", "updated_by"]

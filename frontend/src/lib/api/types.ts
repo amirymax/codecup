@@ -57,3 +57,9 @@ export interface Paginated<T> {
   previous: string | null;
   results: T[];
 }
+
+/** Реквизиты для оплаты — одни на всю площадку. */
+export interface PaymentSettings {
+  requisites: string;
+  updated_at: string;
+}

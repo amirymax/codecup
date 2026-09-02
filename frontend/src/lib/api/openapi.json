@@ -406,6 +406,78 @@
                 }
             }
         },
+        "/api/admin/payments/requisites/": {
+            "get": {
+                "operationId": "admin_payments_requisites_retrieve",
+                "description": "Реквизиты для оплаты: посмотреть и изменить прямо из админки.",
+                "summary": "Реквизиты для оплаты",
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaymentSettings"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "admin_payments_requisites_update",
+                "description": "Реквизиты для оплаты: посмотреть и изменить прямо из админки.",
+                "summary": "Изменить реквизиты для оплаты",
+                "tags": [
+                    "admin"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PaymentSettingsRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PaymentSettingsRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PaymentSettingsRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaymentSettings"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/admin/stats/": {
             "get": {
                 "operationId": "admin_stats_retrieve",
@@ -2929,6 +3001,39 @@
                 },
                 "required": [
                     "decision"
+                ]
+            },
+            "PaymentSettings": {
+                "type": "object",
+                "description": "Реквизиты в админке.",
+                "properties": {
+                    "requisites": {
+                        "type": "string",
+                        "maxLength": 2000
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "Обновлены"
+                    }
+                },
+                "required": [
+                    "requisites",
+                    "updated_at"
+                ]
+            },
+            "PaymentSettingsRequest": {
+                "type": "object",
+                "description": "Реквизиты в админке.",
+                "properties": {
+                    "requisites": {
+                        "type": "string",
+                        "maxLength": 2000
+                    }
+                },
+                "required": [
+                    "requisites"
                 ]
             },
             "PaymentStatusEnum": {

@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from django.conf import settings
-
 from apps.contests.models import Contest
 
-from .models import EntryPayment, PaymentStatus
+from .models import EntryPayment, PaymentSettings, PaymentStatus
 
 
 def can_submit(contest: Contest, user) -> bool:
@@ -39,7 +37,7 @@ def participation_state(contest: Contest, user) -> dict:
         "is_paid": contest.is_paid,
         "entry_fee": contest.entry_fee,
         "currency": contest.currency,
-        "requisites": settings.PAYMENT_REQUISITES if contest.is_paid else "",
+        "requisites": PaymentSettings.load().effective_requisites if contest.is_paid else "",
         "can_submit": can_submit(contest, user),
         "payment": payment,
     }

@@ -99,6 +99,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/payments/requisites/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Реквизиты для оплаты
+         * @description Реквизиты для оплаты: посмотреть и изменить прямо из админки.
+         */
+        get: operations["admin_payments_requisites_retrieve"];
+        /**
+         * Изменить реквизиты для оплаты
+         * @description Реквизиты для оплаты: посмотреть и изменить прямо из админки.
+         */
+        put: operations["admin_payments_requisites_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/stats/": {
         parameters: {
             query?: never;
@@ -1266,6 +1290,19 @@ export interface components {
             decision: components["schemas"]["DecisionEnum"];
             reason?: string;
         };
+        /** @description Реквизиты в админке. */
+        PaymentSettings: {
+            requisites: string;
+            /**
+             * Обновлены
+             * Format: date-time
+             */
+            readonly updated_at: string;
+        };
+        /** @description Реквизиты в админке. */
+        PaymentSettingsRequest: {
+            requisites: string;
+        };
         /**
          * @description * `awaiting_receipt` - ждём чек
          *     * `pending` - на проверке
@@ -1590,6 +1627,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminPayment"];
+                };
+            };
+        };
+    };
+    admin_payments_requisites_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentSettings"];
+                };
+            };
+        };
+    };
+    admin_payments_requisites_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentSettingsRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PaymentSettingsRequest"];
+                "multipart/form-data": components["schemas"]["PaymentSettingsRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentSettings"];
                 };
             };
         };

@@ -21,6 +21,7 @@ import type {
   MySubmission,
   Paginated,
   Participation,
+  PaymentSettings,
   ProfileSubmission,
   PublicProfile,
   ReviewNavigation,
@@ -129,4 +130,10 @@ export async function getAdminSubmission(id: string): Promise<{
   screening: Screening | null;
 }> {
   return api.get(`/api/admin/submissions/${id}/`, { cookie: await cookieHeader() });
+}
+
+export async function getPaymentRequisites(): Promise<PaymentSettings> {
+  return api.get<PaymentSettings>("/api/admin/payments/requisites/", {
+    cookie: await cookieHeader(),
+  });
 }

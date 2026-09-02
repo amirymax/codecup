@@ -3,8 +3,9 @@ import Link from "next/link";
 import { ArrowLeftIcon } from "@/components/Icons";
 import { Navbar } from "@/components/Navbar";
 import { PaymentRow } from "@/components/admin/PaymentRow";
+import { RequisitesForm } from "@/components/admin/RequisitesForm";
 import { requireAdmin } from "@/lib/adminGuard";
-import { getAdminPayments } from "@/lib/api/server";
+import { getAdminPayments, getPaymentRequisites } from "@/lib/api/server";
 import { admin, payments as t } from "@/messages/ru";
 
 interface Props {
@@ -14,7 +15,10 @@ interface Props {
 export default async function AdminPaymentsPage({ searchParams }: Props) {
   const { status } = await searchParams;
   const user = await requireAdmin("/admin/payments");
-  const list = await getAdminPayments(status ? { status } : {});
+  const [list, requisites] = await Promise.all([
+    getAdminPayments(status ? { status } : {}),
+    getPaymentRequisites(),
+  ]);
 
   return (
     <div className="min-h-screen bg-ink text-text">
@@ -29,6 +33,8 @@ export default async function AdminPaymentsPage({ searchParams }: Props) {
           <ArrowLeftIcon />
           {admin.dashboard}
         </Link>
+
+        <RequisitesForm initial={requisites.requisites} />
 
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-2xl font-extrabold tracking-tight">{t.title}</h1>

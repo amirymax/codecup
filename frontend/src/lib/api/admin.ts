@@ -2,7 +2,7 @@
 "use client";
 
 import { api } from "./client";
-import type { AdminContest, AdminSubmission } from "./types";
+import type { AdminContest, AdminSubmission, PaymentSettings } from "./types";
 
 export interface ContestInput {
   title: string;
@@ -41,4 +41,8 @@ export async function saveReview(id: number, input: ReviewInput): Promise<AdminS
     { ...input },
   );
   return data.submission;
+}
+
+export async function savePaymentRequisites(requisites: string): Promise<PaymentSettings> {
+  return api.put<PaymentSettings>("/api/admin/payments/requisites/", { requisites });
 }

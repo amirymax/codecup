@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     AdminPaymentDecisionView,
     AdminPaymentListView,
+    AdminPaymentRequisitesView,
     ParticipationView,
     ReceiptViaBotView,
     UploadReceiptView,
@@ -16,6 +17,12 @@ contest_urlpatterns = [
 
 admin_urlpatterns = [
     path("payments/", AdminPaymentListView.as_view(), name="admin-payment-list"),
+    # Раньше <int:pk>: строковый путь с ним не сталкивается.
+    path(
+        "payments/requisites/",
+        AdminPaymentRequisitesView.as_view(),
+        name="admin-payment-requisites",
+    ),
     path(
         "payments/<int:pk>/decision/",
         AdminPaymentDecisionView.as_view(),
