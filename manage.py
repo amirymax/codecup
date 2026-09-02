@@ -3,10 +3,16 @@
 
 import os
 import sys
+from pathlib import Path
 
 
 def main():
     """Run administrative tasks."""
+    # .env читаем до setdefault: иначе DJANGO_SETTINGS_MODULE из файла
+    # игнорируется, и на сервере команды молча идут с локальными настройками.
+    import environ
+
+    environ.Env.read_env(Path(__file__).resolve().parent / ".env")
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
     try:
         from django.core.management import execute_from_command_line
