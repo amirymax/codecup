@@ -14,6 +14,31 @@ if [ ! -x .venv/bin/ruff ]; then
     exit 0
 fi
 
+# Тесты требуют Postgres. Если база не поднята, это не повод превращать
+# push в стену трассировок — предупреждаем и пропускаем.
+if ! .venv/bin/python -c "
+import socket, sys
+from urllib.parse import urlparse
+import os
+url = os.environ.get('DATABASE_URL', '')
+if not url:
+    for line in open('.env'):
+        if line.startswith('DATABASE_URL='):
+            url = line.split('=', 1)[1].strip()
+            break
+parsed = urlparse(url)
+try:
+    socket.create_connection((parsed.hostname or '127.0.0.1', parsed.port or 5432), timeout=2).close()
+except OSError:
+    sys.exit(1)
+" 2>/dev/null; then
+    echo "pre-push: Postgres не отвечает — пропускаю тесты (make up)"
+    .venv/bin/ruff check . --quiet
+    .venv/bin/ruff format --check . --quiet
+    echo "pre-push: проверен только стиль"
+    exit 0
+fi
+
 echo "pre-push: стиль…"
 .venv/bin/ruff check . --quiet
 .venv/bin/ruff format --check . --quiet
