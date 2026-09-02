@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { InlineCountdown } from "@/components/Countdown";
 import { ClockIcon } from "@/components/Icons";
-import { formatMoney, formatNumber, formatShortDate } from "@/lib/format";
+import { firstParagraph, formatMoney, formatNumber, formatShortDate } from "@/lib/format";
 import { landing } from "@/messages/ru";
 import type { ContestDetail } from "@/lib/api/types";
 
@@ -65,8 +65,4 @@ function Metric({ label, value, className }: { label: string; value: string; cla
       <div className={`font-mono text-xl font-bold ${className}`}>{value}</div>
     </div>
   );
-}
-
-function firstParagraph(text: string): string {
-  return text.trim().split(/\n\s*\n/)[0] ?? "";
 }

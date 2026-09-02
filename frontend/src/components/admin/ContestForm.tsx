@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createContest, publishContest, updateContest } from "@/lib/api/admin";
 import { ApiRequestError } from "@/lib/api/errors";
-import { CURRENCIES, formatMoney } from "@/lib/format";
+import { CURRENCIES, firstParagraph, formatMoney } from "@/lib/format";
 import { admin, createContest as t } from "@/messages/ru";
 import type { AdminContest } from "@/lib/api/types";
 
@@ -287,8 +287,10 @@ export function ContestForm({ existing }: { existing?: AdminContest }) {
             <h3 className="mb-2 text-[17px] font-extrabold text-text">
               {title || t.defaultTitle}
             </h3>
-            <p className="mb-4 text-[13px] leading-relaxed text-muted">
-              {description || t.defaultDesc}
+            {/* Превью повторяет карточку на главной: те же переносы строк
+                и тот же первый абзац, иначе оно обещает не то, что увидят. */}
+            <p className="mb-4 text-[13px] leading-relaxed whitespace-pre-line text-muted">
+              {description ? firstParagraph(description) : t.defaultDesc}
             </p>
             <div className="flex gap-5">
               <div>

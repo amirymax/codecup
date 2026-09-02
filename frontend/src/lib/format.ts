@@ -98,3 +98,11 @@ export function splitDuration(totalSeconds: number) {
 }
 
 export const pad = (value: number): string => String(value).padStart(2, "0");
+
+/**
+ * Первый абзац описания — для карточек, где полный текст не помещается.
+ * Абзацы разделены пустой строкой, как их набирают в форме контеста.
+ */
+export function firstParagraph(text: string): string {
+  return text.trim().split(/\n\s*\n/)[0] ?? "";
+}
