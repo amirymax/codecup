@@ -23,6 +23,10 @@ echo "==> Сборка фронтенда"
 set -a
 . /opt/codecup/.env.frontend
 set +a
+if [ -z "${NEXT_PUBLIC_API_URL:-}" ]; then
+    echo "ОШИБКА: в .env.frontend нет NEXT_PUBLIC_API_URL — браузер пошёл бы на localhost:8000"
+    exit 1
+fi
 cd frontend
 npm ci --silent
 npm run build > /dev/null
