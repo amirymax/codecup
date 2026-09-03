@@ -58,6 +58,20 @@ RECEIPT_ALREADY_PENDING = (
 ADMIN_DECISION_ACCEPTED = "Принято"
 ADMIN_DECISION_REJECTED = "Отклонено"
 
+REJECT_ASK_REASON = (
+    "Напишите <b>ответом на это сообщение</b>, почему чек отклонён — "
+    "участник увидит текст целиком.\n\nЕсли причины нет, отправьте «-»."
+)
+# Чем можно ответить, чтобы отклонить без объяснения.
+REJECT_REASON_SKIPPED = {"-", "—", "–"}
+CALLBACK_ASK_REASON = "Напишите причину ответом"
+REJECT_ALREADY_DECIDED = "По этому чеку решение уже принято."
+
+
+def rejection_saved(payment) -> str:
+    reason = payment.rejection_reason or "без объяснения"
+    return f"✖️ Чек отклонён: {reason}"
+
 
 def decision_label(payment) -> str | None:
     """Итог проверки. None — решения ещё нет, дописывать нечего."""

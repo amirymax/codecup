@@ -53,6 +53,22 @@ def _document_update(telegram_id: int, mime: str = "application/pdf") -> dict:
     }
 
 
+def _reason_reply(telegram_id: int, prompt_id: int, text: str) -> dict:
+    """Ответ администратора на запрос причины отказа."""
+    chat = {"id": telegram_id, "type": "private"}
+    return {
+        "update_id": 4,
+        "message": {
+            "message_id": 40,
+            "date": 1_700_000_000,
+            "chat": chat,
+            "from": {"id": telegram_id, "is_bot": False, "first_name": "Админ"},
+            "text": text,
+            "reply_to_message": {"message_id": prompt_id, "date": 1_700_000_000, "chat": chat},
+        },
+    }
+
+
 def _decision_update(telegram_id: int, action: str, payment_id: int) -> dict:
     return {
         "update_id": 3,
@@ -146,14 +162,80 @@ def test_admin_accepts_from_telegram(client: APIClient, no_telegram_calls) -> No
     assert payment.reviewed_by == admin
 
 
-def test_admin_rejects_from_telegram(client: APIClient, no_telegram_calls) -> None:
+def test_rejecting_from_telegram_asks_for_a_reason_first(
+    client: APIClient, no_telegram_calls
+) -> None:
+    """Отказ без объяснения участнику ничего не говорит."""
     AdminFactory(telegram_username="AmiriCode", telegram_id=9003)
     payment = PaymentFactory(status=PaymentStatus.PENDING)
 
     _post(client, _decision_update(9003, "pay_no", payment.id))
 
     payment.refresh_from_db()
+    assert payment.status == PaymentStatus.PENDING, "решение принимается только с причиной"
+    assert payment.rejection_prompt_message_id == 99
+    asked = [p for _, p in no_telegram_calls if p.get("chat_id") == 9003]
+    assert asked and asked[0]["reply_markup"]["force_reply"] is True
+
+
+def test_the_reason_written_in_telegram_finishes_the_rejection(
+    client: APIClient, no_telegram_calls
+) -> None:
+    admin = AdminFactory(telegram_username="AmiriCode", telegram_id=9013)
+    payment = PaymentFactory(status=PaymentStatus.PENDING)
+    _post(client, _decision_update(9013, "pay_no", payment.id))
+    payment.refresh_from_db()
+
+    _post(client, _reason_reply(9013, payment.rejection_prompt_message_id, "Не видно суммы"))
+
+    payment.refresh_from_db()
     assert payment.status == PaymentStatus.REJECTED
+    assert payment.rejection_reason == "Не видно суммы"
+    assert payment.reviewed_by == admin
+
+
+def test_a_dash_rejects_without_a_reason(client: APIClient, no_telegram_calls) -> None:
+    AdminFactory(telegram_username="AmiriCode", telegram_id=9014)
+    payment = PaymentFactory(status=PaymentStatus.PENDING)
+    _post(client, _decision_update(9014, "pay_no", payment.id))
+    payment.refresh_from_db()
+
+    _post(client, _reason_reply(9014, payment.rejection_prompt_message_id, "-"))
+
+    payment.refresh_from_db()
+    assert payment.status == PaymentStatus.REJECTED
+    assert payment.rejection_reason == ""
+
+
+def test_only_staff_can_write_the_reason(client: APIClient, no_telegram_calls) -> None:
+    """Запрос могли переслать кому угодно."""
+    AdminFactory(telegram_username="AmiriCode", telegram_id=9015)
+    UserFactory(telegram_id=4015)
+    payment = PaymentFactory(status=PaymentStatus.PENDING)
+    _post(client, _decision_update(9015, "pay_no", payment.id))
+    payment.refresh_from_db()
+
+    _post(client, _reason_reply(4015, payment.rejection_prompt_message_id, "Просто так"))
+
+    payment.refresh_from_db()
+    assert payment.status == PaymentStatus.PENDING
+
+
+def test_a_reason_for_an_already_decided_receipt_changes_nothing(
+    client: APIClient, no_telegram_calls
+) -> None:
+    """Пока админ печатал, решение приняли на сайте."""
+    reviewer = AdminFactory(telegram_username="AmiriCode", telegram_id=9016)
+    payment = PaymentFactory(status=PaymentStatus.PENDING)
+    _post(client, _decision_update(9016, "pay_no", payment.id))
+    payment.refresh_from_db()
+    prompt_id = payment.rejection_prompt_message_id
+    payment.accept(reviewer)
+
+    _post(client, _reason_reply(9016, prompt_id, "Не видно суммы"))
+
+    payment.refresh_from_db()
+    assert payment.status == PaymentStatus.ACCEPTED
 
 
 def test_a_participant_cannot_approve_their_own_payment(client, no_telegram_calls) -> None:
@@ -182,11 +264,14 @@ def test_the_participant_is_told_about_a_rejection_too(client, no_telegram_calls
     AdminFactory(telegram_username="AmiriCode", telegram_id=9006)
     user = UserFactory(telegram_id=4008)
     payment = PaymentFactory(user=user, status=PaymentStatus.PENDING)
-
     _post(client, _decision_update(9006, "pay_no", payment.id))
+    payment.refresh_from_db()
+
+    _post(client, _reason_reply(9006, payment.rejection_prompt_message_id, "Не видно суммы"))
 
     told = [p for method, p in no_telegram_calls if p.get("chat_id") == 4008]
     assert told and "отклонён" in told[0]["text"]
+    assert "Не видно суммы" in told[0]["text"]
 
 
 def test_a_decision_on_a_missing_payment_is_harmless(client, no_telegram_calls) -> None:
@@ -256,24 +341,40 @@ def _edits(calls, method: str) -> list[dict]:
     return [payload for name, payload in calls if name == method]
 
 
-@pytest.mark.parametrize("action", ["pay_ok", "pay_no"])
-def test_buttons_disappear_once_a_decision_is_made(client, no_telegram_calls, action) -> None:
+def test_buttons_disappear_once_a_payment_is_accepted(client, no_telegram_calls) -> None:
     """Пока кнопки на месте, решение можно нажать повторно."""
     AdminFactory(telegram_username="AmiriCode", telegram_id=9100)
     payment = PaymentFactory(status=PaymentStatus.PENDING)
 
-    _post(client, _decision_update(9100, action, payment.id))
+    _post(client, _decision_update(9100, "pay_ok", payment.id))
 
     cleared = _edits(no_telegram_calls, "editMessageReplyMarkup")
     assert cleared, "клавиатура не снята"
     assert cleared[0]["reply_markup"] == {"inline_keyboard": []}
 
 
+def test_buttons_survive_until_the_rejection_reason_arrives(client, no_telegram_calls) -> None:
+    """Иначе передумать после случайного нажатия можно было бы только на сайте."""
+    AdminFactory(telegram_username="AmiriCode", telegram_id=9103)
+    payment = PaymentFactory(status=PaymentStatus.PENDING, admin_chat_id=9103, admin_message_id=22)
+
+    _post(client, _decision_update(9103, "pay_no", payment.id))
+    assert not _edits(no_telegram_calls, "editMessageReplyMarkup")
+
+    payment.refresh_from_db()
+    _post(client, _reason_reply(9103, payment.rejection_prompt_message_id, "Не видно суммы"))
+
+    cleared = _edits(no_telegram_calls, "editMessageReplyMarkup")
+    assert cleared and cleared[0]["reply_markup"] == {"inline_keyboard": []}
+
+
 def test_the_decision_is_written_into_the_receipt_message(client, no_telegram_calls) -> None:
     AdminFactory(telegram_username="AmiriCode", telegram_id=9101)
-    payment = PaymentFactory(status=PaymentStatus.PENDING)
-
+    payment = PaymentFactory(status=PaymentStatus.PENDING, admin_chat_id=9101, admin_message_id=22)
     _post(client, _decision_update(9101, "pay_no", payment.id))
+    payment.refresh_from_db()
+
+    _post(client, _reason_reply(9101, payment.rejection_prompt_message_id, "Не видно суммы"))
 
     captions = _edits(no_telegram_calls, "editMessageCaption")
     assert captions and "Отклонено" in captions[0]["caption"]

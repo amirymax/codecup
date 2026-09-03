@@ -36,6 +36,12 @@ def _handle_message(message: dict[str, Any]) -> None:
         _handle_receipt(message)
         return
 
+    # Ответ на запрос причины отказа — это решение администратора, а не
+    # обычное сообщение, поэтому проверяем до всего остального.
+    reply_to = (message.get("reply_to_message") or {}).get("message_id")
+    if reply_to and _handle_rejection_reason(message, reply_to, text):
+        return
+
     if not text.startswith("/start"):
         return
 
@@ -194,12 +200,19 @@ def _handle_payment_decision(query: dict[str, Any], action: str, payment_id: str
         answer(messages.CALLBACK_EXPIRED)
         return
 
-    if action == "pay_ok":
-        payment.accept(reviewer)
-        answer(messages.ADMIN_DECISION_ACCEPTED)
-    else:
-        payment.reject(reviewer, "")
-        answer(messages.ADMIN_DECISION_REJECTED)
+    if not payment.is_under_review:
+        answer(messages.REJECT_ALREADY_DECIDED)
+        return
+
+    # Отказ без объяснения участнику ничего не говорит, поэтому сначала
+    # спрашиваем причину и ждём ответа на запрос.
+    if action == "pay_no":
+        _ask_rejection_reason(query, payment)
+        answer(messages.CALLBACK_ASK_REASON)
+        return
+
+    payment.accept(reviewer)
+    answer(messages.ADMIN_DECISION_ACCEPTED)
 
     message = query.get("message") or {}
     close_admin_decision_message(
@@ -209,3 +222,58 @@ def _handle_payment_decision(query: dict[str, Any], action: str, payment_id: str
     )
 
     notify_participant(payment)
+
+
+def _ask_rejection_reason(query: dict[str, Any], payment) -> None:
+    """Просит администратора написать причину ответом на сообщение."""
+    from .client import TelegramClient, TelegramError
+
+    chat_id = ((query.get("message") or {}).get("chat") or {}).get("id")
+    if not chat_id:
+        return
+
+    try:
+        sent = TelegramClient().send_message(
+            chat_id,
+            messages.REJECT_ASK_REASON,
+            reply_markup={"force_reply": True, "input_field_placeholder": "Причина отказа"},
+        )
+    except TelegramError:
+        logger.exception("Не удалось запросить причину отказа по чеку %s", payment.id)
+        return
+
+    if sent.get("message_id"):
+        payment.wait_for_rejection_reason(sent["message_id"])
+
+
+def _handle_rejection_reason(message: dict[str, Any], prompt_id: int, text: str) -> bool:
+    """Ответ на запрос причины. Возвращает True, если сообщение было им."""
+    from apps.payments.models import EntryPayment
+    from apps.telegrambot.payments import close_admin_decision_message, notify_participant
+    from apps.users.models import User
+
+    payment = (
+        EntryPayment.objects.filter(rejection_prompt_message_id=prompt_id)
+        .select_related("contest", "user")
+        .first()
+    )
+    if payment is None:
+        return False
+
+    chat_id = message["chat"]["id"]
+    reviewer = User.objects.filter(telegram_id=(message.get("from") or {}).get("id")).first()
+    if reviewer is None or not reviewer.is_staff:
+        return False
+
+    if not payment.is_under_review:
+        # Пока админ печатал, решение приняли на сайте.
+        send_message_safely(chat_id, messages.REJECT_ALREADY_DECIDED)
+        return True
+
+    reason = "" if text in messages.REJECT_REASON_SKIPPED else text
+    payment.reject(reviewer, reason)
+
+    close_admin_decision_message(payment)
+    notify_participant(payment)
+    send_message_safely(chat_id, messages.rejection_saved(payment))
+    return True

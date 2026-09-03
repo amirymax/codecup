@@ -112,6 +112,10 @@ class EntryPayment(models.Model):
     # принятое на сайте, могло убрать кнопки и дописать итог в Telegram.
     admin_chat_id = models.BigIntegerField("чат администратора", null=True, blank=True)
     admin_message_id = models.BigIntegerField("сообщение с чеком", null=True, blank=True)
+    # Пока id здесь, бот ждёт ответом на это сообщение причину отказа.
+    rejection_prompt_message_id = models.BigIntegerField(
+        "запрос причины отказа", null=True, blank=True
+    )
 
     submitted_at = models.DateTimeField("чек получен", null=True, blank=True)
     reviewed_at = models.DateTimeField("проверен", null=True, blank=True)
@@ -181,6 +185,7 @@ class EntryPayment(models.Model):
         # и дописывать в него решение по новому нельзя.
         self.admin_chat_id = None
         self.admin_message_id = None
+        self.rejection_prompt_message_id = None
         self.save()
 
     def wait_for_bot_receipt(self) -> None:
@@ -188,13 +193,27 @@ class EntryPayment(models.Model):
         self.expects_receipt_in_bot = True
         self.save(update_fields=["status", "expects_receipt_in_bot", "updated_at"])
 
+    def wait_for_rejection_reason(self, prompt_message_id: int) -> None:
+        """Запоминает запрос причины: ответ на это сообщение станет отказом."""
+        self.rejection_prompt_message_id = prompt_message_id
+        self.save(update_fields=["rejection_prompt_message_id", "updated_at"])
+
     def accept(self, reviewer) -> None:
         self.status = PaymentStatus.ACCEPTED
         self.reviewed_by = reviewer
         self.reviewed_at = timezone.now()
         self.rejection_reason = ""
+        # Решение принято — ждать причину отказа больше не нужно.
+        self.rejection_prompt_message_id = None
         self.save(
-            update_fields=["status", "reviewed_by", "reviewed_at", "rejection_reason", "updated_at"]
+            update_fields=[
+                "status",
+                "reviewed_by",
+                "reviewed_at",
+                "rejection_reason",
+                "rejection_prompt_message_id",
+                "updated_at",
+            ]
         )
 
     def reject(self, reviewer, reason: str = "") -> None:
@@ -202,7 +221,15 @@ class EntryPayment(models.Model):
         self.reviewed_by = reviewer
         self.reviewed_at = timezone.now()
         self.rejection_reason = reason
+        self.rejection_prompt_message_id = None
         # Отклонённый чек можно заменить новым, поэтому запись остаётся живой.
         self.save(
-            update_fields=["status", "reviewed_by", "reviewed_at", "rejection_reason", "updated_at"]
+            update_fields=[
+                "status",
+                "reviewed_by",
+                "reviewed_at",
+                "rejection_reason",
+                "rejection_prompt_message_id",
+                "updated_at",
+            ]
         )
