@@ -102,6 +102,12 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Чеки об оплате содержат номера карт и имена, поэтому наружу media не
+# отдаётся: файл выдаёт только админский эндпоинт после проверки прав.
+# В проде сами байты отдаёт nginx по внутреннему редиректу, локально — Django.
+USE_X_ACCEL_REDIRECT = False
+MEDIA_INTERNAL_LOCATION = "/protected-media/"
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {

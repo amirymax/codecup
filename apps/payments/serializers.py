@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.conf import settings
+from django.urls import reverse
 from rest_framework import serializers
 
 from .models import EntryPayment, PaymentSettings, PaymentStatus
@@ -87,10 +88,15 @@ class AdminPaymentSerializer(serializers.ModelSerializer):
         return "telegram" if payment.telegram_file_id else "none"
 
     def get_receipt_url(self, payment: EntryPayment) -> str | None:
+        """Ссылка на защищённый эндпоинт, а не на файл в media.
+
+        Открывается переходом по ссылке, поэтому кука сессии уходит вместе с
+        запросом и права проверяются как обычно.
+        """
         if not payment.receipt:
             return None
+        url = reverse("admin-payment-receipt", args=[payment.id])
         request = self.context.get("request")
-        url = payment.receipt.url
         return request.build_absolute_uri(url) if request else url
 
 

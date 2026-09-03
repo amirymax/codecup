@@ -45,6 +45,10 @@ certbot certonly --webroot -w /var/www/html \
 cp /opt/codecup/deploy/nginx/codecup.conf /etc/nginx/sites-available/codecup.conf
 nginx -t && systemctl reload nginx
 
+> Конфиг nginx не обновляется выкаткой. После изменений в `deploy/nginx/`
+> скопируйте его на сервер этой же командой — иначе, например, чеки об оплате
+> перестанут открываться или, наоборот, останутся в открытом доступе.
+
 # 5. Выкатка
 /opt/codecup/deploy/deploy.sh
 
@@ -114,5 +118,6 @@ crontab -e
 | Бот молчит | `systemctl status codecup-bot`, проверьте `TELEGRAM_BOT_TOKEN` |
 | `502` от nginx | сервис не поднялся: `journalctl -u codecup-api -n 50` |
 | Нет стилей | `collectstatic` не отработал — запустите `deploy.sh` заново |
+| Чек не открывается из админки | в nginx нет `location /protected-media/` с `internal` — скопируйте свежий `deploy/nginx/codecup.conf` |
 | «Application error: a server-side exception» на всех страницах | сервер Next.js не достучался до API: проверьте `INTERNAL_API_URL` в `.env.frontend` и `journalctl -u codecup-web -n 30` |
 | `fatal: detected dubious ownership` при выкатке | `/opt/codecup` принадлежит не root: `chown -R root:root /opt/codecup` |

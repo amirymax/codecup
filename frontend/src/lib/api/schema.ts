@@ -119,6 +119,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/payments/{id}/receipt/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Открыть чек
+         * @description Чек об оплате. Только для администраторов.
+         */
+        get: operations["admin_payments_receipt_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/payments/requisites/": {
         parameters: {
             query?: never;
@@ -759,6 +779,12 @@ export interface components {
             readonly currency: string;
             /** Статус */
             readonly status: components["schemas"]["PaymentStatusEnum"];
+            /**
+             * @description Ссылка на защищённый эндпоинт, а не на файл в media.
+             *
+             *     Открывается переходом по ссылке, поэтому кука сессии уходит вместе с
+             *     запросом и права проверяются как обычно.
+             */
             readonly receipt_url: string | null;
             /** @description file — можно открыть, telegram — только в чате, none — чека нет. */
             readonly receipt_source: string;
@@ -1725,6 +1751,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminPayment"];
+                };
+            };
+        };
+    };
+    admin_payments_receipt_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
         };

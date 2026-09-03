@@ -4,6 +4,7 @@ from .views import (
     AdminPaymentDecisionView,
     AdminPaymentListView,
     AdminPaymentRequisitesView,
+    AdminReceiptView,
     ParticipationView,
     ReceiptViaBotView,
     UploadReceiptView,
@@ -22,6 +23,11 @@ admin_urlpatterns = [
         "payments/requisites/",
         AdminPaymentRequisitesView.as_view(),
         name="admin-payment-requisites",
+    ),
+    path(
+        "payments/<int:pk>/receipt/",
+        AdminReceiptView.as_view(),
+        name="admin-payment-receipt",
     ),
     path(
         "payments/<int:pk>/decision/",

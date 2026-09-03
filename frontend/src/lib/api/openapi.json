@@ -443,6 +443,44 @@
                 }
             }
         },
+        "/api/admin/payments/{id}/receipt/": {
+            "get": {
+                "operationId": "admin_payments_receipt_retrieve",
+                "description": "Чек об оплате. Только для администраторов.",
+                "summary": "Открыть чек",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/admin/payments/requisites/": {
             "get": {
                 "operationId": "admin_payments_requisites_retrieve",
@@ -1770,6 +1808,7 @@
                     "receipt_url": {
                         "type": "string",
                         "nullable": true,
+                        "description": "Ссылка на защищённый эндпоинт, а не на файл в media.\n\nОткрывается переходом по ссылке, поэтому кука сессии уходит вместе с\nзапросом и права проверяются как обычно.",
                         "readOnly": true
                     },
                     "receipt_source": {

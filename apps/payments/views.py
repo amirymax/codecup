@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -13,6 +15,7 @@ from apps.common.exceptions import DomainError
 from apps.contests.models import Contest
 
 from .models import EntryPayment, PaymentSettings, PaymentStatus
+from .receipts import receipt_response
 from .serializers import (
     AdminPaymentSerializer,
     ParticipationSerializer,
@@ -126,6 +129,19 @@ class AdminPaymentListView(generics.ListAPIView):
         if contest := self.request.query_params.get("contest"):
             queryset = queryset.filter(contest__slug=contest)
         return queryset
+
+
+class AdminReceiptView(APIView):
+    """Чек об оплате. Только для администраторов."""
+
+    permission_classes = [IsAdminUser]
+
+    @extend_schema(summary="Открыть чек", responses={200: OpenApiTypes.BINARY})
+    def get(self, request: Request, pk: int) -> HttpResponse:
+        payment = get_object_or_404(EntryPayment, pk=pk)
+        if not payment.receipt:
+            raise Http404("Чек не загружен.")
+        return receipt_response(payment)
 
 
 class AdminPaymentDecisionView(APIView):

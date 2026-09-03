@@ -7,6 +7,9 @@ DEBUG = False
 
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS")
 
+# Отдавать файл из Python дорого, а nginx умеет это по внутреннему редиректу.
+USE_X_ACCEL_REDIRECT = True
+
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # Редирект http → https делает nginx. gunicorn слушает только loopback, и по
 # нему ходят без TLS: проверка в deploy.sh и сервер Next.js при рендеринге
