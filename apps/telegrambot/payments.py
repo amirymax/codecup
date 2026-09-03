@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from contextlib import suppress
 from pathlib import Path
 
 import httpx
@@ -52,7 +53,7 @@ def forward_receipt_to_admin(payment: EntryPayment) -> None:
 
     try:
         if payment.telegram_file_id:
-            client.call(
+            sent = client.call(
                 "sendPhoto" if payment.receipt_is_photo else "sendDocument",
                 chat_id=chat_id,
                 **{"photo" if payment.receipt_is_photo else "document": payment.telegram_file_id},
@@ -61,13 +62,78 @@ def forward_receipt_to_admin(payment: EntryPayment) -> None:
                 reply_markup=keyboard,
             )
         elif payment.receipt:
-            _send_stored_receipt(client, chat_id, payment, caption, keyboard)
+            sent = _send_stored_receipt(client, chat_id, payment, caption, keyboard)
         else:
-            client.send_message(chat_id, caption, reply_markup=keyboard)
+            sent = client.send_message(chat_id, caption, reply_markup=keyboard)
     except (TelegramError, httpx.HTTPError, OSError):
         # Не смогли переслать файл — админ всё равно должен узнать о чеке.
         logger.exception("Не удалось переслать чек %s", payment.id)
         send_message_safely(chat_id, caption, reply_markup=keyboard)
+        return
+
+    _remember_admin_message(payment, chat_id, sent)
+
+
+def _remember_admin_message(payment: EntryPayment, chat_id: int, sent: dict) -> None:
+    """Запоминает, куда ушёл чек, чтобы потом дописать в это сообщение решение."""
+    message_id = (sent or {}).get("message_id")
+    if not message_id:
+        return
+
+    payment.admin_chat_id = chat_id
+    payment.admin_message_id = message_id
+    payment.save(update_fields=["admin_chat_id", "admin_message_id", "updated_at"])
+
+
+def close_admin_decision_message(
+    payment: EntryPayment,
+    chat_id: int | None = None,
+    message_id: int | None = None,
+) -> None:
+    """Убирает кнопки под чеком и дописывает принятое решение.
+
+    Вызывается и после нажатия кнопки в боте, и после решения в админ-панели:
+    иначе чек, разобранный на сайте, остаётся в Telegram с живыми кнопками,
+    и его можно принять второй раз.
+    """
+    chat_id = chat_id if chat_id is not None else payment.admin_chat_id
+    message_id = message_id if message_id is not None else payment.admin_message_id
+    if not chat_id or not message_id:
+        return
+
+    decision = messages.decision_label(payment)
+    if decision is None:
+        return
+
+    text = f"{messages.receipt_for_admin(payment)}\n\n<b>{decision}</b>"
+    client = TelegramClient()
+
+    # Сначала снимаем клавиатуру: пока кнопки на месте, решение можно нажать
+    # повторно. editMessageReplyMarkup работает и с медиа, и с текстом.
+    with suppress(TelegramError, httpx.HTTPError):
+        client.call(
+            "editMessageReplyMarkup",
+            chat_id=chat_id,
+            message_id=message_id,
+            reply_markup={"inline_keyboard": []},
+        )
+
+    # Чек уходит картинкой или файлом, но при сбое отправки — обычным
+    # текстом. Метод правки у них разный, поэтому пробуем оба.
+    for method, field in (("editMessageCaption", "caption"), ("editMessageText", "text")):
+        try:
+            client.call(
+                method,
+                chat_id=chat_id,
+                message_id=message_id,
+                parse_mode="HTML",
+                **{field: text},
+            )
+            return
+        except (TelegramError, httpx.HTTPError):
+            continue
+
+    logger.warning("Не удалось дописать решение в сообщение чека %s", payment.id)
 
 
 def download_receipt(payment: EntryPayment) -> bool:
@@ -117,7 +183,7 @@ def _send_stored_receipt(
     payment: EntryPayment,
     caption: str,
     keyboard: dict,
-) -> None:
+) -> dict:
     """Отправляет чек, загруженный на сайте, самим файлом.
 
     Именно этот путь раньше и молчал: чек уходил ссылкой на домен фронтенда,
@@ -131,7 +197,7 @@ def _send_stored_receipt(
     # Картинку показываем прямо в чате, PDF и всё крупное — файлом.
     as_photo = Path(filename).suffix.lower() in PHOTO_SUFFIXES and len(content) <= PHOTO_MAX_BYTES
 
-    client.send_file(
+    return client.send_file(
         "sendPhoto" if as_photo else "sendDocument",
         field="photo" if as_photo else "document",
         filename=filename,

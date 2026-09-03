@@ -108,6 +108,11 @@ class EntryPayment(models.Model):
     # Пока флаг взведён, следующий файл от этого человека в боте считается чеком.
     expects_receipt_in_bot = models.BooleanField("ждём чек в боте", default=False)
 
+    # Сообщение с чеком в чате администратора. Храним, чтобы решение,
+    # принятое на сайте, могло убрать кнопки и дописать итог в Telegram.
+    admin_chat_id = models.BigIntegerField("чат администратора", null=True, blank=True)
+    admin_message_id = models.BigIntegerField("сообщение с чеком", null=True, blank=True)
+
     submitted_at = models.DateTimeField("чек получен", null=True, blank=True)
     reviewed_at = models.DateTimeField("проверен", null=True, blank=True)
     reviewed_by = models.ForeignKey(
@@ -150,6 +155,16 @@ class EntryPayment(models.Model):
     def has_receipt(self) -> bool:
         return bool(self.receipt) or bool(self.telegram_file_id)
 
+    @property
+    def is_under_review(self) -> bool:
+        """Чек уже прислан и ждёт решения.
+
+        Пока он на проверке, второй чек не принимаем ни с сайта, ни из бота:
+        администратор должен разбирать одну заявку, а не догадываться, какой
+        из чеков актуальный.
+        """
+        return self.status == PaymentStatus.PENDING
+
     def attach_receipt(self, *, file=None, telegram_file_id: str = "", kind: str = "") -> None:
         """Принимает чек с сайта или из бота и ставит его в очередь проверки."""
         if file is not None:
@@ -162,6 +177,10 @@ class EntryPayment(models.Model):
         self.submitted_at = timezone.now()
         self.expects_receipt_in_bot = False
         self.rejection_reason = ""
+        # Прежнее сообщение в чате администратора относится к старому чеку,
+        # и дописывать в него решение по новому нельзя.
+        self.admin_chat_id = None
+        self.admin_message_id = None
         self.save()
 
     def wait_for_bot_receipt(self) -> None:

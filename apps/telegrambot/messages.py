@@ -50,8 +50,24 @@ RECEIPT_NOT_EXPECTED = (
 
 RECEIPT_WRONG_FORMAT = "Нужен скриншот или PDF. Пришлите файл ещё раз."
 
+RECEIPT_ALREADY_PENDING = (
+    "Ваш чек уже на проверке — второй присылать не нужно. "
+    "Мы сообщим, как только администратор примет решение."
+)
+
 ADMIN_DECISION_ACCEPTED = "Принято"
 ADMIN_DECISION_REJECTED = "Отклонено"
+
+
+def decision_label(payment) -> str | None:
+    """Итог проверки. None — решения ещё нет, дописывать нечего."""
+    from apps.payments.models import PaymentStatus
+
+    if payment.status == PaymentStatus.ACCEPTED:
+        return ADMIN_DECISION_ACCEPTED
+    if payment.status == PaymentStatus.REJECTED:
+        return ADMIN_DECISION_REJECTED
+    return None
 
 
 def receipt_for_admin(payment) -> str:

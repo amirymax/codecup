@@ -108,3 +108,79 @@ def test_uploading_from_the_site_sends_the_file_right_away(
     method, sent = no_telegram_calls[-1]
     assert method == "sendPhoto"
     assert sent["content"] == PNG
+
+
+# --- решение из админ-панели доходит до Telegram ----------------------------
+
+
+def test_forwarding_remembers_where_the_receipt_landed(notified_admin, no_telegram_calls) -> None:
+    """Без этого решение с сайта некуда дописывать."""
+    payment = _payment_with_file("cheque.png", PNG)
+
+    forward_receipt_to_admin(payment)
+
+    payment.refresh_from_db()
+    assert payment.admin_chat_id == notified_admin.telegram_id
+    assert payment.admin_message_id == 99
+
+
+def test_a_replacement_receipt_forgets_the_previous_message(
+    notified_admin, no_telegram_calls
+) -> None:
+    """Иначе решение по новому чеку дописалось бы к старому сообщению."""
+    payment = _payment_with_file("cheque.png", PNG)
+    forward_receipt_to_admin(payment)
+
+    payment.attach_receipt(telegram_file_id="AgACnew", kind="photo")
+
+    payment.refresh_from_db()
+    assert payment.admin_message_id is None
+
+
+def test_accepting_in_the_admin_panel_closes_the_message_in_telegram(
+    client: APIClient, admin, settings, no_telegram_calls
+) -> None:
+    settings.TELEGRAM_ADMIN_USERNAME = admin.telegram_username
+    payment = _payment_with_file("cheque.png", PNG)
+    forward_receipt_to_admin(payment)
+
+    response = client.post(
+        reverse("admin-payment-decision", args=[payment.id]), {"decision": "accept"}, format="json"
+    )
+
+    assert response.status_code == 200
+    sent = dict(no_telegram_calls)
+    assert sent["editMessageReplyMarkup"]["reply_markup"] == {"inline_keyboard": []}
+    assert "Принято" in sent["editMessageCaption"]["caption"]
+
+
+def test_rejecting_in_the_admin_panel_says_so_in_telegram(
+    client: APIClient, admin, settings, no_telegram_calls
+) -> None:
+    settings.TELEGRAM_ADMIN_USERNAME = admin.telegram_username
+    payment = _payment_with_file("cheque.png", PNG)
+    forward_receipt_to_admin(payment)
+
+    client.post(
+        reverse("admin-payment-decision", args=[payment.id]),
+        {"decision": "reject", "reason": "Не видно суммы"},
+        format="json",
+    )
+
+    sent = dict(no_telegram_calls)
+    assert "Отклонено" in sent["editMessageCaption"]["caption"]
+
+
+def test_a_receipt_never_forwarded_is_decided_without_touching_telegram(
+    client: APIClient, admin, settings, no_telegram_calls
+) -> None:
+    """Сообщения в чате нет — правит нечего, но решение должно приниматься."""
+    settings.TELEGRAM_ADMIN_USERNAME = admin.telegram_username
+    payment = PaymentFactory()
+
+    response = client.post(
+        reverse("admin-payment-decision", args=[payment.id]), {"decision": "accept"}, format="json"
+    )
+
+    assert response.status_code == 200
+    assert "editMessageCaption" not in dict(no_telegram_calls)

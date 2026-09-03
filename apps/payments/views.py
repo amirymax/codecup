@@ -67,6 +67,12 @@ class UploadReceiptView(APIView):
         if payment.is_accepted:
             raise DomainError("Взнос уже принят.", code="payment_already_accepted")
 
+        if payment.is_under_review:
+            raise DomainError(
+                "Ваш чек уже на проверке. Дождитесь решения администратора.",
+                code="payment_under_review",
+            )
+
         upload = ReceiptUploadSerializer(data=request.data)
         upload.is_valid(raise_exception=True)
         payment.attach_receipt(file=upload.validated_data["receipt"])
@@ -91,6 +97,12 @@ class ReceiptViaBotView(APIView):
 
         if payment.is_accepted:
             raise DomainError("Взнос уже принят.", code="payment_already_accepted")
+
+        if payment.is_under_review:
+            raise DomainError(
+                "Ваш чек уже на проверке. Дождитесь решения администратора.",
+                code="payment_under_review",
+            )
 
         payment.wait_for_bot_receipt()
 
@@ -138,6 +150,9 @@ class AdminPaymentDecisionView(APIView):
             payment.reject(request.user, decision.validated_data.get("reason", ""))
 
         _notify_participant(payment)
+        # Чек лежит в чате администратора с живыми кнопками: без этого его
+        # можно принять второй раз уже из Telegram.
+        _close_bot_message(payment)
         return Response(
             AdminPaymentSerializer(payment, context={"request": request}).data,
             status=status.HTTP_200_OK,
@@ -154,6 +169,12 @@ def _notify_admin(payment: EntryPayment) -> None:
     from apps.telegrambot.payments import forward_receipt_to_admin
 
     forward_receipt_to_admin(payment)
+
+
+def _close_bot_message(payment: EntryPayment) -> None:
+    from apps.telegrambot.payments import close_admin_decision_message
+
+    close_admin_decision_message(payment)
 
 
 def _notify_participant(payment: EntryPayment) -> None:

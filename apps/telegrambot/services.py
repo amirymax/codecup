@@ -115,7 +115,7 @@ def _handle_callback_query(query: dict[str, Any]) -> None:
 
 def _handle_receipt(message: dict[str, Any]) -> None:
     """Фото или документ от участника, от которого ждут чек."""
-    from apps.payments.models import EntryPayment
+    from apps.payments.models import EntryPayment, PaymentStatus
     from apps.telegrambot.payments import download_receipt, forward_receipt_to_admin
     from apps.users.models import User
 
@@ -134,7 +134,13 @@ def _handle_receipt(message: dict[str, Any]) -> None:
         .first()
     )
     if payment is None:
-        send_message_safely(chat_id, messages.RECEIPT_NOT_EXPECTED)
+        # Чек уже прислан с сайта — второй не нужен, и человеку это лучше
+        # объяснить, чем отвечать «мы от вас чек не ждём».
+        pending = EntryPayment.objects.filter(user=user, status=PaymentStatus.PENDING).exists()
+        send_message_safely(
+            chat_id,
+            messages.RECEIPT_ALREADY_PENDING if pending else messages.RECEIPT_NOT_EXPECTED,
+        )
         return
 
     file_id, kind = _extract_file(message)
@@ -166,7 +172,7 @@ def _extract_file(message: dict[str, Any]) -> tuple[str, str]:
 def _handle_payment_decision(query: dict[str, Any], action: str, payment_id: str) -> None:
     """Кнопки «Принять» и «Отклонить» под пересланным чеком."""
     from apps.payments.models import EntryPayment
-    from apps.telegrambot.payments import notify_participant
+    from apps.telegrambot.payments import close_admin_decision_message, notify_participant
     from apps.users.models import User
 
     from .client import TelegramClient, TelegramError
@@ -196,42 +202,10 @@ def _handle_payment_decision(query: dict[str, Any], action: str, payment_id: str
         answer(messages.ADMIN_DECISION_REJECTED)
 
     message = query.get("message") or {}
-    if message.get("message_id") and message.get("chat"):
-        _close_decision_message(client, message, payment, action)
+    close_admin_decision_message(
+        payment,
+        chat_id=(message.get("chat") or {}).get("id"),
+        message_id=message.get("message_id"),
+    )
 
     notify_participant(payment)
-
-
-def _close_decision_message(client, message: dict[str, Any], payment, action: str) -> None:
-    """Убирает кнопки и дописывает решение к сообщению с чеком."""
-    from .client import TelegramError
-
-    chat_id = message["chat"]["id"]
-    message_id = message["message_id"]
-    decision = (
-        messages.ADMIN_DECISION_ACCEPTED if action == "pay_ok" else messages.ADMIN_DECISION_REJECTED
-    )
-    text = f"{messages.receipt_for_admin(payment)}\n\n<b>{decision}</b>"
-
-    # Сначала снимаем клавиатуру: пока кнопки на месте, решение можно нажать
-    # повторно. editMessageReplyMarkup работает и с медиа, и с текстом.
-    with suppress(TelegramError):
-        client.call(
-            "editMessageReplyMarkup",
-            chat_id=chat_id,
-            message_id=message_id,
-            reply_markup={"inline_keyboard": []},
-        )
-
-    # Чек уходит картинкой или файлом, но при сбое отправки — обычным
-    # текстом. Метод правки у них разный, поэтому пробуем оба.
-    for method, field in (("editMessageCaption", "caption"), ("editMessageText", "text")):
-        try:
-            client.call(
-                method, chat_id=chat_id, message_id=message_id, parse_mode="HTML", **{field: text}
-            )
-            return
-        except TelegramError:
-            continue
-
-    logger.warning("Не удалось отметить решение в сообщении с чеком %s", payment.id)
