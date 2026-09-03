@@ -31,9 +31,7 @@ def no_telegram_calls(monkeypatch):
         return {"message_id": 99}
 
     def fake_send_file(self, method, *, field, filename, content, **payload):
-        calls.append(
-            (method, payload | {"field": field, "filename": filename, "content": content})
-        )
+        calls.append((method, payload | {"field": field, "filename": filename, "content": content}))
         return {"message_id": 99}
 
     monkeypatch.setattr("apps.telegrambot.client.TelegramClient.call", fake_call)
