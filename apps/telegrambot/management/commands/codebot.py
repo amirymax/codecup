@@ -9,7 +9,7 @@ from typing import Any
 
 import httpx
 from django.core.management.base import BaseCommand, CommandError
-from django.db import close_old_connections
+from django.db import connections
 
 from apps.telegrambot.client import TelegramClient, TelegramError
 from apps.telegrambot.services import handle_update
@@ -18,6 +18,23 @@ logger = logging.getLogger(__name__)
 
 # Пауза после сетевой ошибки, чтобы не долбить API в цикле.
 RETRY_DELAY_SECONDS = 3
+
+
+def release_db_connections() -> None:
+    """Отпустить соединения с базой — то же, что Django делает между запросами.
+
+    В цикле опроса запроса-ответа нет, поэтому сигналы Django не срабатывают
+    и одно соединение живёт столько же, сколько процесс: за ночь простоя оно
+    умирает по таймауту на стороне Postgres, и дальше каждый апдейт падает с
+    «the connection is closed».
+
+    Соединение с открытой транзакцией не трогаем. Снаружи бот транзакций не
+    открывает, а вот каждый тест в неё завёрнут — закрыв её, мы отобрали бы
+    базу у самого теста.
+    """
+    for connection in connections.all(initialized_only=True):
+        if not connection.in_atomic_block:
+            connection.close_if_unusable_or_obsolete()
 
 
 class Command(BaseCommand):
@@ -90,20 +107,16 @@ class Command(BaseCommand):
                 self._process(update)
 
     def _process(self, update: dict[str, Any]) -> None:
-        # Соединение с базой берём свежим и сразу отпускаем.
-        #
-        # Django закрывает старые соединения по сигналам запроса-ответа, а в
-        # цикле бота их нет: одно соединение висело бы сутками и умирало по
-        # таймауту на той стороне. После этого каждый апдейт падал с
-        # «the connection is closed», причём процесс оставался живым —
-        # исключение мы ловим, systemd видит «active» и ничего не чинит.
-        close_old_connections()
+        # Свежее соединение на каждый апдейт: мёртвое не должно отравлять
+        # все следующие. Процесс при этом остаётся живым — исключение мы
+        # ловим, systemd видит «active» и ничего не перезапускает.
+        release_db_connections()
         try:
             handle_update(update)
         except Exception:
             logger.exception("Ошибка обработки апдейта %s", update.get("update_id"))
         finally:
-            close_old_connections()
+            release_db_connections()
 
     # --- служебное ------------------------------------------------------
 

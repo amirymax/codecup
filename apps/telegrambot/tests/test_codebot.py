@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.db import OperationalError
+from django.db import OperationalError, connection, transaction
 
 from apps.telegrambot.management.commands import codebot as codebot_module
 from apps.users.models import AuthTokenStatus, TelegramAuthToken, User
@@ -180,7 +180,7 @@ def test_every_update_gets_a_fresh_database_connection(run_bot, monkeypatch) -> 
     вид процессе, который systemd не станет перезапускать.
     """
     events: list[str] = []
-    monkeypatch.setattr(codebot_module, "close_old_connections", lambda: events.append("db"))
+    monkeypatch.setattr(codebot_module, "release_db_connections", lambda: events.append("db"))
     monkeypatch.setattr(codebot_module, "handle_update", lambda update: events.append("update"))
 
     run_bot([[{"update_id": 1}, {"update_id": 2}]])
@@ -191,7 +191,7 @@ def test_every_update_gets_a_fresh_database_connection(run_bot, monkeypatch) -> 
 def test_connection_is_released_even_when_the_update_fails(run_bot, monkeypatch) -> None:
     """Иначе умершее соединение осталось бы висеть до конца жизни процесса."""
     events: list[str] = []
-    monkeypatch.setattr(codebot_module, "close_old_connections", lambda: events.append("db"))
+    monkeypatch.setattr(codebot_module, "release_db_connections", lambda: events.append("db"))
 
     def boom(update):
         raise OperationalError("the connection is closed")
@@ -201,6 +201,14 @@ def test_connection_is_released_even_when_the_update_fails(run_bot, monkeypatch)
     run_bot([[{**start_update(), "update_id": 7}]])
 
     assert events == ["db", "db"]
+
+
+def test_a_connection_inside_a_transaction_is_left_alone() -> None:
+    """Закрыть соединение с открытой транзакцией — потерять саму транзакцию."""
+    with transaction.atomic():
+        codebot_module.release_db_connections()
+
+        assert not connection.closed_in_transaction
 
 
 def test_first_request_starts_without_an_offset(run_bot) -> None:
