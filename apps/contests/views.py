@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from django.db.models import Count, Q
+from django.db.models import Case, Count, Q, When
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics, status
@@ -19,10 +19,33 @@ from .serializers import (
 
 
 def _participants_count():
-    """Аннотация счётчика участников: черновики не в счёт."""
+    """Аннотация счётчика участников.
+
+    Участник — это тот, кого допустили к контесту, а не тот, кто успел
+    прислать работу. На платном контесте допуск даёт принятый взнос: человек
+    заплатил и участвует, даже если решение пришлёт в последний день. На
+    бесплатном платить не за что, поэтому считаем присланные работы.
+
+    distinct обязателен: без него join по двум связям размножил бы строки.
+    """
+    from apps.payments.models import PaymentStatus
     from apps.submissions.models import SubmissionStatus
 
-    return Count("submissions", filter=~Q(submissions__status=SubmissionStatus.DRAFT))
+    return Case(
+        When(
+            entry_fee__gt=0,
+            then=Count(
+                "payments__user",
+                filter=Q(payments__status=PaymentStatus.ACCEPTED),
+                distinct=True,
+            ),
+        ),
+        default=Count(
+            "submissions__user",
+            filter=~Q(submissions__status=SubmissionStatus.DRAFT),
+            distinct=True,
+        ),
+    )
 
 
 class ContestListView(generics.ListAPIView):

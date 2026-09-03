@@ -29,3 +29,11 @@ def participant(client: APIClient):
 @pytest.fixture
 def admin(client: APIClient):
     return _authenticate(client, AdminFactory())
+
+
+@pytest.fixture
+def admin_user():
+    """Проверяющий, не подменяющий авторизацию тестового клиента."""
+    from apps.users.tests.factories import AdminFactory
+
+    return AdminFactory()

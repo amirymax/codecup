@@ -46,7 +46,7 @@ class ContestListSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_participants_count(self, contest: Contest) -> int:
-        """Число участников: черновики не считаются участием.
+        """Сколько человек участвует — см. _participants_count во вьюхах.
 
         Значение берётся из аннотации, если вьюха её сделала, иначе
         считается запросом — чтобы сериализатор работал и вне списка.
@@ -54,7 +54,9 @@ class ContestListSerializer(serializers.ModelSerializer):
         annotated = getattr(contest, "participants_count", None)
         if annotated is not None:
             return annotated
-        return contest.submissions.counted().count()
+        if contest.is_paid:
+            return contest.payments.accepted().values("user").distinct().count()
+        return contest.submissions.counted().values("user").distinct().count()
 
     def get_seconds_left(self, contest: Contest) -> int:
         """Сколько секунд осталось до дедлайна.
