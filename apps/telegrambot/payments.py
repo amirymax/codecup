@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 import httpx
 from django.conf import settings
@@ -14,6 +15,10 @@ from . import messages
 from .client import TelegramClient, TelegramError, send_message_safely
 
 logger = logging.getLogger(__name__)
+
+# sendPhoto у Bot API ограничен 10 МБ; всё, что больше, уходит документом.
+PHOTO_MAX_BYTES = 10 * 1024 * 1024
+PHOTO_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp"}
 
 
 def admin_chat_id() -> int | None:
@@ -56,14 +61,7 @@ def forward_receipt_to_admin(payment: EntryPayment) -> None:
                 reply_markup=keyboard,
             )
         elif payment.receipt:
-            client.call(
-                "sendDocument",
-                chat_id=chat_id,
-                document=_absolute_receipt_url(payment),
-                caption=caption,
-                parse_mode="HTML",
-                reply_markup=keyboard,
-            )
+            _send_stored_receipt(client, chat_id, payment, caption, keyboard)
         else:
             client.send_message(chat_id, caption, reply_markup=keyboard)
     except (TelegramError, httpx.HTTPError, OSError):
@@ -113,6 +111,33 @@ def notify_participant(payment: EntryPayment) -> None:
     send_message_safely(payment.user.telegram_id, text)
 
 
-def _absolute_receipt_url(payment: EntryPayment) -> str:
-    base = settings.FRONTEND_URL.rstrip("/")
-    return f"{base}{payment.receipt.url}"
+def _send_stored_receipt(
+    client: TelegramClient,
+    chat_id: int,
+    payment: EntryPayment,
+    caption: str,
+    keyboard: dict,
+) -> None:
+    """Отправляет чек, загруженный на сайте, самим файлом.
+
+    Именно этот путь раньше и молчал: чек уходил ссылкой на домен фронтенда,
+    где media не отдаётся, Bot API получал 404 — и администратору доставался
+    только текст.
+    """
+    with payment.receipt.open("rb") as handle:
+        content = handle.read()
+
+    filename = Path(payment.receipt.name).name
+    # Картинку показываем прямо в чате, PDF и всё крупное — файлом.
+    as_photo = Path(filename).suffix.lower() in PHOTO_SUFFIXES and len(content) <= PHOTO_MAX_BYTES
+
+    client.send_file(
+        "sendPhoto" if as_photo else "sendDocument",
+        field="photo" if as_photo else "document",
+        filename=filename,
+        content=content,
+        chat_id=chat_id,
+        caption=caption,
+        parse_mode="HTML",
+        reply_markup=keyboard,
+    )

@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any
 
@@ -49,6 +50,43 @@ class TelegramClient:
         if not data.get("ok"):
             raise TelegramError(f"{method}: {data.get('description', 'неизвестная ошибка')}")
         return data.get("result", {})
+
+    def send_file(
+        self,
+        method: str,
+        *,
+        field: str,
+        filename: str,
+        content: bytes,
+        **payload: Any,
+    ) -> dict[str, Any]:
+        """Отправка файла содержимым, а не ссылкой на него.
+
+        Bot API умеет забирать файл по URL, но media отдаётся только с
+        api.codecup.tech, а ссылка собиралась на домен фронтенда — Telegram
+        получал от Next.js страницу 404 и чек не доходил. Байты не зависят
+        ни от домена, ни от того, открыт ли media наружу вообще.
+        """
+        if not self.is_configured:
+            raise TelegramError("TELEGRAM_BOT_TOKEN не задан.")
+
+        url = f"{settings.TELEGRAM_API_URL}/bot{self.token}/{method}"
+        # multipart не передаёт вложенные структуры: reply_markup и числа
+        # уходят строками, иначе Bot API их не разберёт.
+        data = {
+            key: value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
+            for key, value in payload.items()
+        }
+        response = httpx.post(
+            url,
+            data=data,
+            files={field: (filename, content)},
+            timeout=settings.TELEGRAM_REQUEST_TIMEOUT,
+        )
+        result = response.json()
+        if not result.get("ok"):
+            raise TelegramError(f"{method}: {result.get('description', 'неизвестная ошибка')}")
+        return result.get("result", {})
 
     # --- методы, которыми пользуется проект ------------------------------
 
