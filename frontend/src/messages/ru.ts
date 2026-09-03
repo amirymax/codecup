@@ -95,6 +95,11 @@ export const contest = {
   worksDemo: "Демонстрация",
   worksVideo: "Видео",
   worksSubmittedAt: "Отправлено",
+  worksClosedTitle: "Рейтинг ещё закрыт",
+  worksClosedDesc:
+    "Работы участников откроются после дедлайна — до этого никто не видит чужие " +
+    "репозитории. Возвращайтесь, когда приём заявок закончится.",
+  worksClosedOk: "Понятно",
   deadline: "Дедлайн",
   timeRemaining: "Осталось времени",
   endedOn: "Завершён",
@@ -273,6 +278,10 @@ export const screening = {
 } as const;
 
 export const review = {
+  deleteCta: "Удалить заявку",
+  deleteConfirm: "Удалить заявку без возможности вернуть?",
+  deleting: "Удаляем…",
+  deleteFailed: "Не удалось удалить. Попробуйте ещё раз.",
   notFoundTitle: "Заявка не найдена",
   notFoundDesc: "Возможно, она была отозвана участником.",
   backToDashboard: "Назад к панели",

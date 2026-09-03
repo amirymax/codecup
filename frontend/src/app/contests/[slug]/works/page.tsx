@@ -25,7 +25,10 @@ export default async function ContestWorksPage({ params }: Props) {
     if (error instanceof ApiRequestError && error.status === 404) notFound();
     throw error;
   });
-  const works = await getContestWorks(slug);
+  // Пока контест идёт, работы закрыты и на сервере: сюда можно прийти по
+  // прямой ссылке, поэтому состояние проверяем, а не полагаемся на кнопку.
+  const isOver = contest.state === "ended";
+  const works = isOver ? await getContestWorks(slug) : null;
 
   return (
     <div className="min-h-screen bg-ink text-text">
@@ -46,7 +49,14 @@ export default async function ContestWorksPage({ params }: Props) {
         </h1>
         <p className="mb-8 text-sm text-muted-2">{contest.title}</p>
 
-        {works.results.length === 0 ? (
+        {!works ? (
+          <p
+            className="rounded-xl border border-dashed border-line-2 bg-surface px-5 py-12
+                       text-center text-sm text-muted-2"
+          >
+            {t.worksClosedDesc}
+          </p>
+        ) : works.results.length === 0 ? (
           <p
             className="rounded-xl border border-dashed border-line-2 bg-surface px-5 py-12
                        text-center text-sm text-muted-2"

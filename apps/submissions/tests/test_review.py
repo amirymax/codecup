@@ -270,3 +270,34 @@ def test_reviewing_a_missing_submission_returns_not_found(client: APIClient, adm
 
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "not_found"
+
+
+# --- удаление заявки --------------------------------------------------------
+
+
+def test_an_admin_can_delete_a_submission(client: APIClient, admin) -> None:
+    """Спам и дубли не должны висеть в очереди проверки."""
+    submission = SubmittedFactory()
+
+    response = client.delete(reverse("admin-submission-detail", args=[submission.pk]))
+
+    assert response.status_code == 204
+    assert not Submission.objects.filter(pk=submission.pk).exists()
+
+
+def test_a_participant_cannot_delete_a_submission(client: APIClient, participant) -> None:
+    submission = SubmittedFactory()
+
+    response = client.delete(reverse("admin-submission-detail", args=[submission.pk]))
+
+    assert response.status_code == 403
+    assert Submission.objects.filter(pk=submission.pk).exists()
+
+
+def test_deleting_lets_the_participant_send_a_new_one(client: APIClient, admin) -> None:
+    """Заявка одна на контест, поэтому запись должна уйти целиком."""
+    submission = SubmittedFactory()
+
+    client.delete(reverse("admin-submission-detail", args=[submission.pk]))
+
+    assert not Submission.objects.filter(contest=submission.contest, user=submission.user).exists()

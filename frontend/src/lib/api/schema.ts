@@ -217,7 +217,14 @@ export interface paths {
         get: operations["admin_submissions_retrieve"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Удалить заявку
+         * @description Убирает заявку целиком — например, спам или дубль.
+         *
+         *     Удаляем, а не прячем: заявка не участвует в подсчётах и не должна
+         *     мозолить глаза в очереди проверки.
+         */
+        delete: operations["admin_submissions_destroy"];
         options?: never;
         head?: never;
         /**
@@ -1960,6 +1967,26 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AdminSubmissionEnvelope"];
                 };
+            };
+        };
+    };
+    admin_submissions_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

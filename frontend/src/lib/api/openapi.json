@@ -746,6 +746,34 @@
                         "description": ""
                     }
                 }
+            },
+            "delete": {
+                "operationId": "admin_submissions_destroy",
+                "description": "Убирает заявку целиком — например, спам или дубль.\n\nУдаляем, а не прячем: заявка не участвует в подсчётах и не должна\nмозолить глаза в очереди проверки.",
+                "summary": "Удалить заявку",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
             }
         },
         "/api/admin/submissions/{id}/screen/": {

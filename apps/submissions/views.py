@@ -191,6 +191,17 @@ class AdminSubmissionDetailView(APIView):
         )
         return Response(self._payload(submission))
 
+    @extend_schema(summary="Удалить заявку", responses={204: None})
+    def delete(self, request: Request, pk: int) -> Response:
+        """Убирает заявку целиком — например, спам или дубль.
+
+        Удаляем, а не прячем: заявка не участвует в подсчётах и не должна
+        мозолить глаза в очереди проверки.
+        """
+        submission = get_object_or_404(Submission, pk=pk)
+        submission.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     def _payload(self, submission: Submission) -> dict:
         """Заявка вместе с навигацией «предыдущая / следующая».
 
@@ -237,6 +248,14 @@ class ContestWorksView(generics.ListAPIView):
 
     def get_queryset(self):
         contest = get_object_or_404(Contest.objects.public(), slug=self.kwargs["slug"])
+        if not contest.is_over:
+            # Пока контест идёт, чужие репозитории видеть нельзя: иначе
+            # работу можно просто списать у того, кто прислал раньше.
+            raise DomainError(
+                "Рейтинг откроется после дедлайна.",
+                code="works_hidden_until_deadline",
+            )
+
         return (
             Submission.objects.filter(contest=contest)
             .counted()

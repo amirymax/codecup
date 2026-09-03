@@ -1,4 +1,4 @@
-"""Работы участников контеста открыты всем."""
+"""Работы участников контеста: закрыты до дедлайна, потом открыты всем."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from apps.contests.models import ContestStatus
-from apps.contests.tests.factories import ContestFactory
+from apps.contests.tests.factories import ContestFactory, EndedContestFactory
 
 from .factories import SubmissionFactory, SubmittedFactory
 
@@ -21,7 +21,7 @@ def _works(client: APIClient, contest) -> list[dict]:
 
 
 def test_a_guest_sees_the_submitted_works(client: APIClient) -> None:
-    contest = ContestFactory()
+    contest = EndedContestFactory()
     SubmittedFactory(contest=contest)
     SubmittedFactory(contest=contest)
 
@@ -29,7 +29,7 @@ def test_a_guest_sees_the_submitted_works(client: APIClient) -> None:
 
 
 def test_a_work_carries_the_links_people_come_to_see(client: APIClient) -> None:
-    contest = ContestFactory()
+    contest = EndedContestFactory()
     work = SubmittedFactory(contest=contest)
 
     row = _works(client, contest)[0]
@@ -42,7 +42,7 @@ def test_a_work_carries_the_links_people_come_to_see(client: APIClient) -> None:
 
 def test_drafts_stay_out_of_the_list(client: APIClient) -> None:
     """Работа появляется, когда её отправили, а не когда начали писать."""
-    contest = ContestFactory()
+    contest = EndedContestFactory()
     SubmittedFactory(contest=contest)
     SubmissionFactory(contest=contest)
 
@@ -50,7 +50,7 @@ def test_drafts_stay_out_of_the_list(client: APIClient) -> None:
 
 
 def test_the_score_and_reviewer_notes_are_never_exposed(client: APIClient) -> None:
-    contest = ContestFactory()
+    contest = EndedContestFactory()
     SubmittedFactory(contest=contest, score=7, reviewer_notes="Слабая архитектура")
 
     row = _works(client, contest)[0]
@@ -60,7 +60,7 @@ def test_the_score_and_reviewer_notes_are_never_exposed(client: APIClient) -> No
 
 
 def test_winners_come_first(client: APIClient) -> None:
-    contest = ContestFactory()
+    contest = EndedContestFactory()
     SubmittedFactory(contest=contest)
     winner = SubmittedFactory(contest=contest, is_winner=True)
 
@@ -68,15 +68,26 @@ def test_winners_come_first(client: APIClient) -> None:
 
 
 def test_works_of_another_contest_are_not_mixed_in(client: APIClient) -> None:
-    contest = ContestFactory()
+    contest = EndedContestFactory()
     SubmittedFactory(contest=contest)
-    SubmittedFactory(contest=ContestFactory())
+    SubmittedFactory(contest=EndedContestFactory())
 
     assert len(_works(client, contest)) == 1
 
 
 def test_an_unpublished_contest_has_no_public_works(client: APIClient) -> None:
-    contest = ContestFactory(status=ContestStatus.DRAFT)
+    contest = EndedContestFactory(status=ContestStatus.DRAFT)
     SubmittedFactory(contest=contest)
 
     assert client.get(reverse("contest-works", args=[contest.slug])).status_code == 404
+
+
+def test_while_the_contest_runs_the_works_stay_closed(client: APIClient) -> None:
+    """Иначе работу можно списать у того, кто прислал раньше."""
+    contest = ContestFactory()
+    SubmittedFactory(contest=contest)
+
+    response = client.get(reverse("contest-works", args=[contest.slug]))
+
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "works_hidden_until_deadline"

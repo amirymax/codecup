@@ -5,6 +5,7 @@ import { Avatar } from "@/components/Avatar";
 import { ArrowLeftIcon, ExternalIcon } from "@/components/Icons";
 import { Navbar } from "@/components/Navbar";
 import { StatusBadge } from "@/components/StatusBadge";
+import { DeleteSubmissionButton } from "@/components/admin/DeleteSubmissionButton";
 import { ReviewPanel } from "@/components/admin/ReviewPanel";
 import { ScreeningPanel } from "@/components/admin/ScreeningPanel";
 import { requireAdmin } from "@/lib/adminGuard";
@@ -88,6 +89,7 @@ export default async function ReviewSubmissionPage({ params }: Props) {
 
           <aside className="min-w-0">
             <ReviewPanel submission={submission} />
+            <DeleteSubmissionButton id={submission.id} contestSlug={submission.contest_slug} />
           </aside>
         </div>
       </div>

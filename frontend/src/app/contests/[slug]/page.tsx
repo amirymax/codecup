@@ -6,13 +6,9 @@ import { Footer } from "@/components/Footer";
 import { ArrowLeftIcon, CheckIcon } from "@/components/Icons";
 import { Navbar } from "@/components/Navbar";
 import { StatusBadge } from "@/components/StatusBadge";
+import { RatingButton } from "@/components/contest/RatingButton";
 import { ApiRequestError } from "@/lib/api/errors";
-import {
-  getContest,
-  getContestWorks,
-  getCurrentUser,
-  getParticipation,
-} from "@/lib/api/server";
+import { getContest, getCurrentUser, getParticipation } from "@/lib/api/server";
 import {
   EntryFeeRow,
   ParticipationCta,
@@ -39,7 +35,6 @@ export default async function ContestPage({ params }: Props) {
   const submission = contest.my_submission;
   const isOver = contest.state === "ended";
   const participation = await getParticipation(slug);
-  const works = await getContestWorks(slug);
 
   return (
     <div className="min-h-screen bg-ink text-text">
@@ -61,15 +56,7 @@ export default async function ContestPage({ params }: Props) {
             <span className="font-mono text-[13px] text-muted-2">{contest.display_number}</span>
           </div>
 
-          <Link
-            href={`/contests/${contest.slug}/works`}
-            className="flex items-center gap-2 rounded-full border border-line-2 px-3.5 py-1.5
-                       text-[13px] font-semibold text-text-2 no-underline transition-colors
-                       hover:border-line-3 hover:bg-surface-3"
-          >
-            {t.worksCta}
-            <span className="font-mono text-muted-2">{works.count}</span>
-          </Link>
+          <RatingButton slug={contest.slug} isOver={isOver} />
         </div>
 
         {/* Заголовок и описание — в левой колонке, чтобы карточка со

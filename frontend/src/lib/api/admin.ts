@@ -46,3 +46,7 @@ export async function saveReview(id: number, input: ReviewInput): Promise<AdminS
 export async function savePaymentRequisites(requisites: string): Promise<PaymentSettings> {
   return api.put<PaymentSettings>("/api/admin/payments/requisites/", { requisites });
 }
+
+export async function deleteSubmission(id: number): Promise<void> {
+  await api.delete<void>(`/api/admin/submissions/${id}/`);
+}
