@@ -554,6 +554,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/contests/{slug}/works/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Работы участников контеста
+         * @description Работы участников контеста — их видят все.
+         *
+         *     Черновики сюда не попадают: работа появляется в списке, когда участник
+         *     её отправил.
+         */
+        get: operations["contests_works_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/contests/featured/": {
         parameters: {
             query?: never;
@@ -1083,6 +1106,41 @@ export interface components {
          */
         ContestStatusEnum: "draft" | "published" | "archived";
         /**
+         * @description Работа участника, открытая всем на странице контеста.
+         *
+         *     Ни оценки, ни заметок проверяющего здесь нет и быть не должно: это
+         *     внутренняя кухня проверки, а не часть работы.
+         */
+        ContestWork: {
+            readonly id: number;
+            readonly username: string;
+            readonly display_name: string;
+            readonly repo_name: string;
+            /**
+             * Репозиторий GitHub
+             * Format: uri
+             */
+            readonly github_url: string;
+            /**
+             * Живая демонстрация
+             * Format: uri
+             */
+            readonly live_url: string;
+            /**
+             * Демо-видео
+             * Format: uri
+             */
+            readonly video_url: string;
+            /** Описание */
+            readonly description: string;
+            readonly display_status: components["schemas"]["DisplayStatusEnum"];
+            /**
+             * Отправлено
+             * Format: date-time
+             */
+            readonly submitted_at: string | null;
+        };
+        /**
          * @description * `USD` - доллар США
          *     * `TJS` - сомони
          *     * `RUB` - рубль
@@ -1308,6 +1366,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["ContestList"][];
+        };
+        PaginatedContestWorkList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["ContestWork"][];
         };
         PaginatedProfileSubmissionList: {
             /** @example 123 */
@@ -2293,6 +2366,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MySubmissionEnvelope"];
+                };
+            };
+        };
+    };
+    contests_works_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedContestWorkList"];
                 };
             };
         };

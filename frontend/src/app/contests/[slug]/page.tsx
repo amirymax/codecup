@@ -7,7 +7,12 @@ import { ArrowLeftIcon, CheckIcon } from "@/components/Icons";
 import { Navbar } from "@/components/Navbar";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ApiRequestError } from "@/lib/api/errors";
-import { getContest, getCurrentUser, getParticipation } from "@/lib/api/server";
+import {
+  getContest,
+  getContestWorks,
+  getCurrentUser,
+  getParticipation,
+} from "@/lib/api/server";
 import {
   EntryFeeRow,
   ParticipationCta,
@@ -34,6 +39,7 @@ export default async function ContestPage({ params }: Props) {
   const submission = contest.my_submission;
   const isOver = contest.state === "ended";
   const participation = await getParticipation(slug);
+  const works = await getContestWorks(slug);
 
   return (
     <div className="min-h-screen bg-ink text-text">
@@ -49,20 +55,34 @@ export default async function ContestPage({ params }: Props) {
           {t.allContests}
         </Link>
 
-        <div className="mb-4 flex flex-wrap items-center gap-2.5">
-          <StatusBadge status={isOver ? "ended" : "live"} />
-          <span className="font-mono text-[13px] text-muted-2">{contest.display_number}</span>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <StatusBadge status={isOver ? "ended" : "live"} />
+            <span className="font-mono text-[13px] text-muted-2">{contest.display_number}</span>
+          </div>
+
+          <Link
+            href={`/contests/${contest.slug}/works`}
+            className="flex items-center gap-2 rounded-full border border-line-2 px-3.5 py-1.5
+                       text-[13px] font-semibold text-text-2 no-underline transition-colors
+                       hover:border-line-3 hover:bg-surface-3"
+          >
+            {t.worksCta}
+            <span className="font-mono text-muted-2">{works.count}</span>
+          </Link>
         </div>
 
-        <h1 className="text-3xl font-extrabold tracking-tight text-balance sm:text-[2.6rem]">
-          {contest.title}
-        </h1>
-        <p className="mt-3.5 mb-10 max-w-[680px] text-[15.5px] leading-[1.7] whitespace-pre-line text-muted">
-          {contest.description}
-        </p>
-
+        {/* Заголовок и описание — в левой колонке, чтобы карточка со
+            взносом и дедлайном стояла рядом с ними, а не ниже. */}
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
           <div className="min-w-0">
+            <h1 className="text-3xl font-extrabold tracking-tight text-balance sm:text-[2.6rem]">
+              {contest.title}
+            </h1>
+            <p className="mt-3.5 mb-10 text-[15.5px] leading-[1.7] whitespace-pre-line text-muted">
+              {contest.description}
+            </p>
+
             <section className="mb-9">
               <h3 className="mb-4 text-[15px] font-bold tracking-wider text-muted-2 uppercase">
                 {t.requirementsTitle}

@@ -74,3 +74,17 @@ export interface AnalyticsSummary {
   pages: { path: string; views: number; visitors: number }[];
   events: { name: string; count: number; visitors: number }[];
 }
+
+/** Работа участника, открытая всем на странице контеста. */
+export interface ContestWork {
+  id: number;
+  username: string;
+  display_name: string;
+  repo_name: string;
+  github_url: string;
+  live_url: string;
+  video_url: string;
+  description: string;
+  display_status: "draft" | "submitted" | "reviewed" | "winner";
+  submitted_at: string | null;
+}

@@ -6,6 +6,7 @@ from .views import (
     AdminRescreenView,
     AdminSubmissionDetailView,
     AdminSubmissionListView,
+    ContestWorksView,
     MySubmissionListView,
     MySubmissionView,
     PublicProfileView,
@@ -13,6 +14,7 @@ from .views import (
 )
 
 contest_urlpatterns = [
+    path("<slug:slug>/works/", ContestWorksView.as_view(), name="contest-works"),
     path("<slug:slug>/submission/", MySubmissionView.as_view(), name="my-submission"),
     path("<slug:slug>/submission/submit/", SubmitSolutionView.as_view(), name="submit-solution"),
 ]

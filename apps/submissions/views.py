@@ -19,6 +19,7 @@ from .serializers import (
     AdminSubmissionDetailSerializer,
     AdminSubmissionEnvelopeSerializer,
     AdminSubmissionListSerializer,
+    ContestWorkSerializer,
     MySubmissionEnvelopeSerializer,
     MySubmissionSerializer,
     ProfileSubmissionSerializer,
@@ -218,6 +219,32 @@ class AdminSubmissionDetailView(APIView):
             "navigation": navigation,
             "screening": ScreeningSerializer(screening).data if screening else None,
         }
+
+
+class ContestWorksView(generics.ListAPIView):
+    """Работы участников контеста — их видят все.
+
+    Черновики сюда не попадают: работа появляется в списке, когда участник
+    её отправил.
+    """
+
+    serializer_class = ContestWorkSerializer
+    permission_classes = []
+
+    @extend_schema(summary="Работы участников контеста")
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        contest = get_object_or_404(Contest.objects.public(), slug=self.kwargs["slug"])
+        return (
+            Submission.objects.filter(contest=contest)
+            .counted()
+            .select_related("user", "contest")
+            # Победители сверху, дальше по времени отправки: кто раньше прислал,
+            # тот выше — порядок не зависит от оценок, которых никто не видит.
+            .order_by("-is_winner", "submitted_at")
+        )
 
 
 class PublicProfileView(APIView):

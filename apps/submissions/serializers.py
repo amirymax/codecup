@@ -144,6 +144,34 @@ class ProfileSubmissionSerializer(_BaseSubmissionSerializer):
         read_only_fields = fields
 
 
+class ContestWorkSerializer(_BaseSubmissionSerializer):
+    """Работа участника, открытая всем на странице контеста.
+
+    Ни оценки, ни заметок проверяющего здесь нет и быть не должно: это
+    внутренняя кухня проверки, а не часть работы.
+    """
+
+    username = serializers.CharField(source="user.username", read_only=True)
+    display_name = serializers.CharField(source="user.display_name", read_only=True)
+    repo_name = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = Submission
+        fields = [
+            "id",
+            "username",
+            "display_name",
+            "repo_name",
+            "github_url",
+            "live_url",
+            "video_url",
+            "description",
+            "display_status",
+            "submitted_at",
+        ]
+        read_only_fields = fields
+
+
 class AdminSubmissionListSerializer(_BaseSubmissionSerializer):
     """Строка в списке заявок админки."""
 

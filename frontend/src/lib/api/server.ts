@@ -18,6 +18,7 @@ import type {
   AdminSubmission,
   AdminSubmissionRow,
   ContestDetail,
+  ContestWork,
   FeaturedContest,
   MySubmission,
   Paginated,
@@ -141,6 +142,12 @@ export async function getPaymentRequisites(): Promise<PaymentSettings> {
 
 export async function getAnalytics(days: number): Promise<AnalyticsSummary> {
   return api.get<AnalyticsSummary>(`/api/admin/analytics/?days=${days}`, {
+    cookie: await cookieHeader(),
+  });
+}
+
+export async function getContestWorks(slug: string): Promise<Paginated<ContestWork>> {
+  return api.get<Paginated<ContestWork>>(`/api/contests/${slug}/works/`, {
     cookie: await cookieHeader(),
   });
 }

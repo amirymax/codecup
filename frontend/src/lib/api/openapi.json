@@ -1392,6 +1392,61 @@
                 }
             }
         },
+        "/api/contests/{slug}/works/": {
+            "get": {
+                "operationId": "contests_works_list",
+                "description": "Работы участников контеста — их видят все.\n\nЧерновики сюда не попадают: работа появляется в списке, когда участник\nеё отправил.",
+                "summary": "Работы участников контеста",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "contests"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedContestWorkList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/contests/featured/": {
             "get": {
                 "operationId": "contests_featured_retrieve",
@@ -2548,6 +2603,78 @@
                 "type": "string",
                 "description": "* `draft` - черновик\n* `published` - опубликован\n* `archived` - в архиве"
             },
+            "ContestWork": {
+                "type": "object",
+                "description": "Работа участника, открытая всем на странице контеста.\n\nНи оценки, ни заметок проверяющего здесь нет и быть не должно: это\nвнутренняя кухня проверки, а не часть работы.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "username": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "display_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "repo_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "github_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "readOnly": true,
+                        "title": "Репозиторий GitHub"
+                    },
+                    "live_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "readOnly": true,
+                        "title": "Живая демонстрация"
+                    },
+                    "video_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "readOnly": true,
+                        "title": "Демо-видео"
+                    },
+                    "description": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Описание"
+                    },
+                    "display_status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DisplayStatusEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "submitted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true,
+                        "title": "Отправлено"
+                    }
+                },
+                "required": [
+                    "description",
+                    "display_name",
+                    "display_status",
+                    "github_url",
+                    "id",
+                    "live_url",
+                    "repo_name",
+                    "submitted_at",
+                    "username",
+                    "video_url"
+                ]
+            },
             "CurrencyEnum": {
                 "enum": [
                     "USD",
@@ -3036,6 +3163,37 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/ContestList"
+                        }
+                    }
+                }
+            },
+            "PaginatedContestWorkList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ContestWork"
                         }
                     }
                 }
