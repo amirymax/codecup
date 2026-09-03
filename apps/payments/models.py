@@ -169,6 +169,27 @@ class EntryPayment(models.Model):
         """
         return self.status == PaymentStatus.PENDING
 
+    def _apply_current_fee(self) -> None:
+        self.amount = self.contest.entry_fee
+        self.currency = self.contest.currency
+
+    def sync_amount_with_contest(self) -> None:
+        """Подтягивает текущую стоимость участия.
+
+        Сумма фиксируется при создании заявки, но взнос за контест могут
+        поменять позже. Участнику всегда показывают цену из контеста, так что
+        старая сумма в заявке — это то, чего никто не платил: она попадала
+        администратору в чек и в админ-панель.
+        """
+        if self.is_accepted:
+            # Принятый взнос — уже история, её переписывать нельзя.
+            return
+        if self.amount == self.contest.entry_fee and self.currency == self.contest.currency:
+            return
+
+        self._apply_current_fee()
+        self.save(update_fields=["amount", "currency", "updated_at"])
+
     def attach_receipt(self, *, file=None, telegram_file_id: str = "", kind: str = "") -> None:
         """Принимает чек с сайта или из бота и ставит его в очередь проверки."""
         if file is not None:
@@ -177,6 +198,9 @@ class EntryPayment(models.Model):
             self.telegram_file_id = telegram_file_id
             self.receipt_kind = kind
 
+        # Чек прислан за ту цену, которая стоит сейчас, а не за ту, что была
+        # при создании заявки. Путь через бота сюда приходит напрямую.
+        self._apply_current_fee()
         self.status = PaymentStatus.PENDING
         self.submitted_at = timezone.now()
         self.expects_receipt_in_bot = False

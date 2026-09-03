@@ -19,12 +19,14 @@ def can_submit(contest: Contest, user) -> bool:
 
 
 def get_or_create_payment(contest: Contest, user) -> EntryPayment:
-    """Заявка на участие. Сумма фиксируется в момент создания."""
+    """Заявка на участие с текущей стоимостью взноса."""
     payment, _ = EntryPayment.objects.get_or_create(
         contest=contest,
         user=user,
         defaults={"amount": contest.entry_fee, "currency": contest.currency},
     )
+    # Заявка могла появиться до того, как администратор поменял взнос.
+    payment.sync_amount_with_contest()
     return payment
 
 
