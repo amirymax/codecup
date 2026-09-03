@@ -13,6 +13,8 @@ export const nav = {
   login: "Войти",
   admin: "Админ",
   logout: "Выйти",
+  menuOpen: "Открыть меню",
+  menuClose: "Закрыть меню",
 } as const;
 
 export const landing = {

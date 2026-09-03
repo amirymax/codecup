@@ -47,8 +47,8 @@ export default async function HomePage() {
         )}
 
         <h1
-          className="text-[2.5rem] leading-[1.05] font-extrabold tracking-tighter text-balance
-                     sm:text-[4.25rem]"
+          className="text-[2.1rem] leading-[1.08] font-extrabold tracking-tighter text-balance
+                     sm:text-[4.25rem] sm:leading-[1.05]"
         >
           {landing.h1Line1}
           <br />

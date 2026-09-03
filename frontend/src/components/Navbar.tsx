@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
 import { Logo } from "@/components/Logo";
 import { LogoutButton } from "@/components/LogoutButton";
+import { MobileNav, type NavLink } from "@/components/MobileNav";
 import { nav } from "@/messages/ru";
 import { cn } from "@/lib/utils";
 import type { User } from "@/lib/api/types";
@@ -15,7 +16,7 @@ type Active = "contests" | "profile" | "admin" | "";
  * страница не может нарисовать админское меню обычному участнику.
  */
 export function Navbar({ user, active = "" }: { user: User | null; active?: Active }) {
-  const links: { label: string; href: string; key: Active }[] = [
+  const links: NavLink[] = [
     { label: nav.contests, href: "/", key: "contests" },
   ];
 
@@ -28,12 +29,14 @@ export function Navbar({ user, active = "" }: { user: User | null; active?: Acti
 
   return (
     <nav
-      className="sticky top-0 z-50 flex h-16 items-center justify-between gap-4 border-b
-                 border-line bg-ink/85 px-4 backdrop-blur-md sm:px-6 lg:px-10"
+      className="sticky top-0 z-50 flex h-16 items-center justify-between gap-3 border-b
+                 border-line bg-ink/85 px-4 backdrop-blur-md sm:gap-4 sm:px-6 lg:px-10"
     >
       <Logo />
 
-      <div className="flex min-w-0 flex-1 items-center justify-center gap-1">
+      {/* Полная шапка требует ~745px: логотип, три ссылки, имя и «Выйти».
+          Ниже этого они наезжают друг на друга, поэтому уходят в меню. */}
+      <div className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex">
         {links.map((link) => (
           <Link
             key={link.key}
@@ -49,19 +52,24 @@ export function Navbar({ user, active = "" }: { user: User | null; active?: Acti
         ))}
       </div>
 
-      <div className="flex shrink-0 items-center gap-2.5">
+      <div className="flex shrink-0 items-center gap-2 lg:gap-2.5">
         {user ? (
           <>
             <Link
               href="/profile"
               className="flex items-center gap-2.5 rounded-full border border-line-2 py-1.5
-                         pr-3 pl-1.5 no-underline transition-colors hover:border-line-3
-                         hover:bg-surface-3"
+                         pr-1.5 pl-1.5 no-underline transition-colors hover:border-line-3
+                         hover:bg-surface-3 lg:pr-3"
             >
               <Avatar name={user.display_name} />
-              <span className="text-[13px] font-medium text-text-2">{user.display_name}</span>
+              <span className="hidden text-[13px] font-medium text-text-2 lg:inline">
+                {user.display_name}
+              </span>
             </Link>
-            <LogoutButton />
+            <div className="hidden lg:block">
+              <LogoutButton />
+            </div>
+            <MobileNav links={links} active={active} />
           </>
         ) : (
           <Link
