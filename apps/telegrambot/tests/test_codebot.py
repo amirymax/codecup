@@ -9,6 +9,7 @@ from __future__ import annotations
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.db import OperationalError
 
 from apps.telegrambot.management.commands import codebot as codebot_module
 from apps.users.models import AuthTokenStatus, TelegramAuthToken, User
@@ -169,6 +170,37 @@ def test_network_errors_are_retried_not_fatal(run_bot) -> None:
     # Два обрыва, затем успешный запрос — и апдейт всё-таки обработан.
     assert len(fake.offsets) >= 3
     assert any(method == "sendMessage" for method, _ in fake.calls)
+
+
+def test_every_update_gets_a_fresh_database_connection(run_bot, monkeypatch) -> None:
+    """В цикле опроса нет запроса-ответа, поэтому соединение обновляем сами.
+
+    Иначе одно соединение висит сутками, умирает по таймауту на той стороне,
+    и дальше каждый апдейт падает с «the connection is closed» — при живом на
+    вид процессе, который systemd не станет перезапускать.
+    """
+    events: list[str] = []
+    monkeypatch.setattr(codebot_module, "close_old_connections", lambda: events.append("db"))
+    monkeypatch.setattr(codebot_module, "handle_update", lambda update: events.append("update"))
+
+    run_bot([[{"update_id": 1}, {"update_id": 2}]])
+
+    assert events == ["db", "update", "db", "db", "update", "db"]
+
+
+def test_connection_is_released_even_when_the_update_fails(run_bot, monkeypatch) -> None:
+    """Иначе умершее соединение осталось бы висеть до конца жизни процесса."""
+    events: list[str] = []
+    monkeypatch.setattr(codebot_module, "close_old_connections", lambda: events.append("db"))
+
+    def boom(update):
+        raise OperationalError("the connection is closed")
+
+    monkeypatch.setattr(codebot_module, "handle_update", boom)
+
+    run_bot([[{**start_update(), "update_id": 7}]])
+
+    assert events == ["db", "db"]
 
 
 def test_first_request_starts_without_an_offset(run_bot) -> None:

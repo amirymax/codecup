@@ -79,6 +79,10 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {"default": env.db("DATABASE_URL")}
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
+# Проверять живость соединения перед повторным использованием. При
+# CONN_MAX_AGE=0 соединение и так закрывается каждый раз, но если его
+# когда-нибудь сделают постоянным, мёртвое соединение не переживёт проверку.
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

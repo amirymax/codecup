@@ -9,6 +9,7 @@ from typing import Any
 
 import httpx
 from django.core.management.base import BaseCommand, CommandError
+from django.db import close_old_connections
 
 from apps.telegrambot.client import TelegramClient, TelegramError
 from apps.telegrambot.services import handle_update
@@ -89,10 +90,20 @@ class Command(BaseCommand):
                 self._process(update)
 
     def _process(self, update: dict[str, Any]) -> None:
+        # Соединение с базой берём свежим и сразу отпускаем.
+        #
+        # Django закрывает старые соединения по сигналам запроса-ответа, а в
+        # цикле бота их нет: одно соединение висело бы сутками и умирало по
+        # таймауту на той стороне. После этого каждый апдейт падал с
+        # «the connection is closed», причём процесс оставался живым —
+        # исключение мы ловим, systemd видит «active» и ничего не чинит.
+        close_old_connections()
         try:
             handle_update(update)
         except Exception:
             logger.exception("Ошибка обработки апдейта %s", update.get("update_id"))
+        finally:
+            close_old_connections()
 
     # --- служебное ------------------------------------------------------
 
