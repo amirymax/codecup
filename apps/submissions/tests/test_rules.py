@@ -291,19 +291,76 @@ def test_youtube_video_links_are_accepted(client: APIClient, participant, url) -
     [
         "https://vimeo.com/123456",
         "https://example.com/demo.mp4",
-        "https://drive.google.com/file/d/x/view",
         "not-a-url",
         # Хост здесь — evil.com, а youtube.com лишь в пути.
         "https://evil.com/youtube.com/watch?v=abc",
     ],
 )
-def test_non_youtube_video_links_are_rejected(client: APIClient, participant, url) -> None:
+def test_video_links_outside_youtube_and_drive_are_rejected(
+    client: APIClient, participant, url
+) -> None:
     contest = ContestFactory()
 
     response = client.post(_submit_url(contest), VALID | {"video_url": url}, format="json")
 
     assert response.status_code == 400
     assert "video_url" in response.json()["error"]["details"]
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://www.youtube.com/watch?v=abc",
+        "https://drive.google.com/file/d/x/view",
+    ],
+)
+def test_a_screen_recording_may_live_on_youtube_or_drive(
+    client: APIClient, participant, url
+) -> None:
+    """Канал на YouTube есть не у всех, а ролик надо где-то держать."""
+    contest = ContestFactory()
+
+    response = client.post(_submit_url(contest), VALID | {"video_url": url}, format="json")
+
+    assert response.status_code == 200
+
+
+def test_a_video_adds_bonus_points(client: APIClient, participant) -> None:
+    """Видео необязательно, но за него добавляем баллы."""
+    from apps.submissions.models import Submission
+
+    contest = ContestFactory()
+    client.post(
+        _submit_url(contest),
+        VALID | {"video_url": "https://drive.google.com/file/d/x/view"},
+        format="json",
+    )
+
+    submission = Submission.objects.get()
+    submission.score = 70
+    assert submission.video_bonus == 10
+    assert submission.total_score == 80
+
+
+def test_without_a_video_nothing_is_taken_away(client: APIClient, participant) -> None:
+    from apps.submissions.models import Submission
+
+    contest = ContestFactory()
+    client.post(_submit_url(contest), VALID | {"video_url": ""}, format="json")
+
+    submission = Submission.objects.get()
+    submission.score = 70
+    assert submission.video_bonus == 0
+    assert submission.total_score == 70
+
+
+def test_an_unreviewed_submission_has_no_total(client: APIClient, participant) -> None:
+    from apps.submissions.models import Submission
+
+    contest = ContestFactory()
+    client.post(_submit_url(contest), VALID, format="json")
+
+    assert Submission.objects.get().total_score is None
 
 
 def test_video_link_stays_optional(client: APIClient, participant) -> None:
@@ -411,7 +468,7 @@ def test_a_draft_may_have_a_short_description(client: APIClient, participant) ->
     assert response.status_code == 201
 
 
-def test_a_draft_still_rejects_a_non_youtube_video_link(client, participant) -> None:
+def test_a_draft_still_rejects_a_video_link_from_elsewhere(client, participant) -> None:
     contest = ContestFactory()
 
     response = client.put(_draft_url(contest), {"video_url": "https://vimeo.com/1"}, format="json")

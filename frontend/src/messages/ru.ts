@@ -159,7 +159,12 @@ export const submit = {
     "Учитывается только последняя отправка до дедлайна.",
   githubLabel: "Ссылка на репозиторий GitHub",
   liveLabel: "Ссылка на живую демонстрацию",
-  videoLabel: "Ссылка на демо-видео",
+  videoLabel: "Ссылка на демо-видео — необязательно",
+  videoHint:
+    "Просто запись экрана: как работает ваш бот или сайт. Ничего говорить и " +
+    "монтировать не нужно. Подойдёт ссылка на YouTube или Google Drive. " +
+    "Видео добавляет 10 баллов, без него ничего не теряется.",
+  videoPlaceholder: "https://youtube.com/... или https://drive.google.com/...",
   descLabel: "Краткое описание",
   descPlaceholder: "Что вы создали и как это использует ИИ?",
   submitting: "Отправка вашего решения…",
@@ -278,6 +283,9 @@ export const screening = {
 } as const;
 
 export const review = {
+  totalLabel: "Итого с бонусом",
+  videoBonusHint: "+10 за видео",
+  noVideoHint: "видео нет",
   deleteCta: "Удалить заявку",
   deleteConfirm: "Удалить заявку без возможности вернуть?",
   deleting: "Удаляем…",

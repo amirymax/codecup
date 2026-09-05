@@ -59,6 +59,15 @@ export function ReviewPanel({ submission }: { submission: AdminSubmission }) {
           }}
           className="bg-surface-2 py-2.5 font-mono"
         />
+        {/* Бонус за видео начисляется сам, поэтому оценка тут — без него. */}
+        <div className="mt-2 flex items-center justify-between text-[12.5px]">
+          <span className="text-muted-2">
+            {t.totalLabel} · {submission.video_bonus ? t.videoBonusHint : t.noVideoHint}
+          </span>
+          <span className="font-mono font-bold text-text">
+            {score === "" ? "—" : Number(score) + submission.video_bonus}
+          </span>
+        </div>
       </div>
 
       <div>

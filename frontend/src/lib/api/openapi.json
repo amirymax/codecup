@@ -2042,6 +2042,15 @@
                         "nullable": true,
                         "title": "Оценка"
                     },
+                    "video_bonus": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "total_score": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
                     "reviewer_notes": {
                         "type": "string",
                         "title": "Заметки проверяющего"
@@ -2085,7 +2094,9 @@
                     "status",
                     "submitted_at",
                     "telegram_username",
+                    "total_score",
                     "username",
+                    "video_bonus",
                     "video_url"
                 ]
             },

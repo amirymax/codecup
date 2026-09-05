@@ -148,9 +148,11 @@ export function SubmitForm({
             id="video_url"
             value={fields.video_url}
             onChange={update("video_url")}
-            placeholder="https://youtube.com/watch?v=..."
+            placeholder={t.videoPlaceholder}
             aria-invalid={Boolean(errors.video_url)}
           />
+          {/* Многие не отправляли работу вовсе, не поняв, какое видео нужно. */}
+          <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted-2">{t.videoHint}</p>
           <FieldError message={errors.video_url} />
         </div>
 

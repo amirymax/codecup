@@ -35,6 +35,15 @@ SOCIAL_HOSTS = YOUTUBE_HOSTS | frozenset(
     }
 )
 
+# Куда можно выложить запись экрана. Google Drive — потому что не у всех
+# есть канал на YouTube, а заливать туда ролик ради конкурса никто не станет.
+GOOGLE_DRIVE_HOSTS = frozenset({"drive.google.com", "docs.google.com"})
+VIDEO_HOSTS = YOUTUBE_HOSTS | GOOGLE_DRIVE_HOSTS
+
+# Видео необязательно, но за него добавляем баллы: запись экрана сильно
+# упрощает проверку, а требовать её — отсекать тех, кто не понял формат.
+VIDEO_BONUS = 10
+
 # Бот или канал в Telegram — допустимая «живая демонстрация».
 TELEGRAM_HOSTS = frozenset({"t.me", "www.t.me", "telegram.me", "telegram.dog"})
 
@@ -60,9 +69,9 @@ def validate_github_url(value: str) -> None:
 
 
 def validate_video_url(value: str) -> None:
-    """Демо-видео должно лежать на YouTube."""
-    if not _has_web_scheme(value) or _hostname(value) not in YOUTUBE_HOSTS:
-        raise ValidationError("Ссылка на видео должна вести на YouTube.")
+    """Демо-видео: YouTube или Google Drive."""
+    if not _has_web_scheme(value) or _hostname(value) not in VIDEO_HOSTS:
+        raise ValidationError("Ссылка на видео должна вести на YouTube или Google Drive.")
 
 
 def validate_live_url(value: str) -> None:
@@ -206,6 +215,18 @@ class Submission(models.Model):
     def repo_name(self) -> str:
         """``github.com/user/repo`` без схемы — так репозиторий показан в списках."""
         return self.github_url.split("://", 1)[-1].removeprefix("www.")
+
+    @property
+    def video_bonus(self) -> int:
+        """Баллы за приложенную запись экрана."""
+        return VIDEO_BONUS if self.video_url else 0
+
+    @property
+    def total_score(self) -> int | None:
+        """Оценка вместе с бонусом за видео. None — заявку ещё не оценили."""
+        if self.score is None:
+            return None
+        return self.score + self.video_bonus
 
     def mark_submitted(self) -> None:
         # Повторная отправка не сдвигает дату: считается первый переход из

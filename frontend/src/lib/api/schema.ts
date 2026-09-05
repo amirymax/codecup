@@ -873,6 +873,8 @@ export interface components {
             readonly display_status: components["schemas"]["DisplayStatusEnum"];
             /** Оценка */
             score?: number | null;
+            readonly video_bonus: number;
+            readonly total_score: number | null;
             /** Заметки проверяющего */
             reviewer_notes?: string;
             /** Победитель */

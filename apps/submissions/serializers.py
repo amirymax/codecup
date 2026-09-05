@@ -201,6 +201,8 @@ class AdminSubmissionDetailSerializer(_BaseSubmissionSerializer):
     username = serializers.CharField(source="user.username", read_only=True)
     telegram_username = serializers.CharField(source="user.telegram_username", read_only=True)
     repo_name = serializers.CharField(read_only=True)
+    video_bonus = serializers.IntegerField(read_only=True)
+    total_score = serializers.IntegerField(read_only=True, allow_null=True)
 
     class Meta:
         model = Submission
@@ -218,6 +220,8 @@ class AdminSubmissionDetailSerializer(_BaseSubmissionSerializer):
             "status",
             "display_status",
             "score",
+            "video_bonus",
+            "total_score",
             "reviewer_notes",
             "is_winner",
             "reviewed_at",
