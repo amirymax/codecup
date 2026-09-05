@@ -86,6 +86,19 @@ export function formatRelative(iso: string | null): string {
   return "только что";
 }
 
+/** «1 балл», «3 балла», «85 баллов» — окончание зависит от числа. */
+const SCORE_FORMS: Record<string, string> = {
+  one: "балл",
+  few: "балла",
+  many: "баллов",
+  other: "балла",
+};
+
+export function formatScore(value: number): string {
+  const form = new Intl.PluralRules("ru").select(value);
+  return `${value} ${SCORE_FORMS[form] ?? SCORE_FORMS.many}`;
+}
+
 /** Разбивает оставшиеся секунды на части обратного отсчёта. */
 export function splitDuration(totalSeconds: number) {
   const safe = Math.max(0, totalSeconds);

@@ -1,12 +1,19 @@
 "use client";
 
 import { CompactCountdown } from "@/components/Countdown";
-import { formatMoney, formatNumber } from "@/lib/format";
+import { formatMoney, formatNumber, formatShortDate } from "@/lib/format";
 import { landing } from "@/messages/ru";
 import type { ContestDetail } from "@/lib/api/types";
 
-/** Три плитки под заголовком главной. */
+/**
+ * Три плитки под заголовком главной.
+ *
+ * У завершённого контеста обратный отсчёт заменяется датой окончания:
+ * «00:00:00» выглядело бы как контест, который вот-вот начнётся.
+ */
 export function HeroStats({ contest }: { contest: ContestDetail }) {
+  const isEnded = contest.state === "ended";
+
   return (
     <div
       className="mx-auto grid max-w-[700px] gap-px overflow-hidden rounded-xl border
@@ -23,8 +30,14 @@ export function HeroStats({ contest }: { contest: ContestDetail }) {
         className="text-blue-light"
       />
       <Tile
-        value={<CompactCountdown secondsLeft={contest.seconds_left} />}
-        label={landing.timeLeftHero}
+        value={
+          isEnded ? (
+            formatShortDate(contest.deadline)
+          ) : (
+            <CompactCountdown secondsLeft={contest.seconds_left} />
+          )
+        }
+        label={isEnded ? landing.endedOn : landing.timeLeftHero}
         className="text-text"
       />
     </div>

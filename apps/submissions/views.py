@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from django.db.models import Q
+from django.db.models import Case, F, IntegerField, Q, Value, When
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics, status
@@ -14,7 +14,7 @@ from apps.contests.models import Contest
 from apps.payments.services import can_submit
 from apps.screening.serializers import ScreeningSerializer
 
-from .models import Submission, SubmissionStatus
+from .models import VIDEO_BONUS, Submission, SubmissionStatus
 from .serializers import (
     AdminSubmissionDetailSerializer,
     AdminSubmissionEnvelopeSerializer,
@@ -45,6 +45,21 @@ def _open_contest(slug: str, user=None) -> Contest:
             slug=contest.slug,
         )
     return contest
+
+
+def _rating():
+    """Итоговые баллы для сортировки: оценка плюс бонус за видео.
+
+    То же самое, что ``Submission.total_score``, но выражением в базе —
+    свойство модели сортировать нельзя. Оценки нет — ``None``, и такие
+    заявки уходят в конец списка, а не в начало как нули.
+    """
+    bonus = Case(
+        When(video_url="", then=Value(0)),
+        default=Value(VIDEO_BONUS),
+        output_field=IntegerField(),
+    )
+    return F("score") + bonus
 
 
 class MySubmissionView(APIView):
@@ -260,9 +275,12 @@ class ContestWorksView(generics.ListAPIView):
             Submission.objects.filter(contest=contest)
             .counted()
             .select_related("user", "contest")
-            # Победители сверху, дальше по времени отправки: кто раньше прислал,
-            # тот выше — порядок не зависит от оценок, которых никто не видит.
-            .order_by("-is_winner", "submitted_at")
+            .annotate(rating=_rating())
+            # Победители сверху, дальше по баллам: это итоговая таблица
+            # контеста. Сами баллы наружу не отдаются — только порядок.
+            # Непроверенные заявки (баллов ещё нет) уходят вниз, между собой
+            # они по времени отправки: кто раньше прислал, тот выше.
+            .order_by("-is_winner", F("rating").desc(nulls_last=True), "submitted_at")
         )
 
 

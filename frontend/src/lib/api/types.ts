@@ -86,5 +86,8 @@ export interface ContestWork {
   video_url: string;
   description: string;
   display_status: "draft" | "submitted" | "reviewed" | "winner";
+  /** Балл вместе с бонусом за видео; null — работу ещё не проверили. */
+  total_score: number | null;
+  video_bonus: number;
   submitted_at: string | null;
 }

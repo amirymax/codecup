@@ -9,14 +9,19 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { ApiRequestError } from "@/lib/api/errors";
 import { getContest, getContestWorks, getCurrentUser } from "@/lib/api/server";
 import type { ContestWork } from "@/lib/api/types";
-import { formatRelative } from "@/lib/format";
+import { formatRelative, formatScore } from "@/lib/format";
 import { contest as t } from "@/messages/ru";
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
-/** Работы участников контеста. Открыты всем, включая гостей. */
+/**
+ * Работы участников контеста — итоговая таблица.
+ *
+ * Открыта всем, включая гостей: результаты смотрят и те, кто не участвовал,
+ * поэтому вход здесь не требуется ни на странице, ни в API.
+ */
 export default async function ContestWorksPage({ params }: Props) {
   const { slug } = await params;
   const user = await getCurrentUser();
@@ -45,9 +50,12 @@ export default async function ContestWorksPage({ params }: Props) {
         </Link>
 
         <h1 className="mb-1.5 text-2xl font-extrabold tracking-tight sm:text-[2rem]">
-          {t.worksPageTitle}
+          {isOver ? t.worksResultsTitle : t.worksPageTitle}
         </h1>
-        <p className="mb-8 text-sm text-muted-2">{contest.title}</p>
+        <p className="mb-8 text-sm text-muted-2">
+          {contest.title}
+          {isOver && works && works.results.length > 0 && ` · ${t.worksResultsHint}`}
+        </p>
 
         {!works ? (
           <p
@@ -65,8 +73,8 @@ export default async function ContestWorksPage({ params }: Props) {
           </p>
         ) : (
           <ul className="flex list-none flex-col gap-4 p-0">
-            {works.results.map((work) => (
-              <WorkCard key={work.id} work={work} />
+            {works.results.map((work, index) => (
+              <WorkCard key={work.id} work={work} place={index + 1} />
             ))}
           </ul>
         )}
@@ -77,10 +85,18 @@ export default async function ContestWorksPage({ params }: Props) {
   );
 }
 
-function WorkCard({ work }: { work: ContestWork }) {
+/** ``place`` — позиция в списке: он отсортирован по итогам проверки. */
+function WorkCard({ work, place }: { work: ContestWork; place: number }) {
   return (
     <li id={work.username} className="rounded-xl border border-line bg-surface p-5 scroll-mt-24">
       <div className="mb-3 flex flex-wrap items-center gap-3">
+        <span
+          aria-label={`${place} ${t.worksPlace}`}
+          className="flex size-7 shrink-0 items-center justify-center rounded-lg border
+                     border-line-2 bg-surface-3 font-mono text-[12.5px] font-bold text-muted"
+        >
+          {place}
+        </span>
         <Avatar name={work.display_name} size={30} />
         <Link
           href={`/users/${work.username}`}
@@ -89,12 +105,14 @@ function WorkCard({ work }: { work: ContestWork }) {
           {work.display_name}
         </Link>
         {work.display_status === "winner" && <StatusBadge status="winner" />}
-        {work.submitted_at && (
-          <span className="ml-auto text-[12.5px] text-muted-3">
-            {t.worksSubmittedAt} {formatRelative(work.submitted_at)}
-          </span>
-        )}
+        <Score work={work} />
       </div>
+
+      {work.submitted_at && (
+        <p className="mb-3 text-[12.5px] text-muted-3">
+          {t.worksSubmittedAt} {formatRelative(work.submitted_at)}
+        </p>
+      )}
 
       {work.description && (
         <p className="mb-4 text-[14px] leading-relaxed whitespace-pre-line text-muted">
@@ -108,6 +126,22 @@ function WorkCard({ work }: { work: ContestWork }) {
         <WorkLink href={work.video_url} label={t.worksVideo} />
       </div>
     </li>
+  );
+}
+
+/** Балл справа в шапке карточки; у непроверенной работы его ещё нет. */
+function Score({ work }: { work: ContestWork }) {
+  if (work.total_score === null) {
+    return <span className="ml-auto text-[12.5px] text-muted-3">{t.worksNotScored}</span>;
+  }
+
+  return (
+    <span
+      className="ml-auto text-right font-mono text-[15px] font-bold text-text"
+      title={work.video_bonus ? t.worksVideoBonus : undefined}
+    >
+      {formatScore(work.total_score)}
+    </span>
   );
 }
 

@@ -20,13 +20,16 @@ import { landing } from "@/messages/ru";
 export default async function HomePage() {
   const [user, featured] = await Promise.all([getCurrentUser(), getFeaturedContest()]);
   const contest = featured.contest;
+  // Завершённый контест приходит сюда, пока не начался следующий: главная
+  // показывает его итоги, а не заглушку «активного контеста нет».
+  const isEnded = contest?.state === "ended";
 
   return (
     <div className="min-h-screen bg-ink text-text">
       <Navbar user={user} active="contests" />
 
       <section className="mx-auto max-w-[1180px] px-5 pt-12 pb-8 text-center sm:px-10 sm:pt-24">
-        {contest ? (
+        {contest && !isEnded ? (
           <span
             className="mb-7 inline-flex items-center gap-2 rounded-full border border-green/25
                        bg-green/10 px-3.5 py-1.5 text-[13px] font-semibold text-green-light"
@@ -42,7 +45,7 @@ export default async function HomePage() {
             className="mb-7 inline-flex items-center gap-2 rounded-full border border-line-2
                        bg-surface-3 px-3.5 py-1.5 text-[13px] font-semibold text-muted"
           >
-            {landing.emptyBadge}
+            {isEnded ? landing.endedBadge : landing.emptyBadge}
           </span>
         )}
 
@@ -67,8 +70,8 @@ export default async function HomePage() {
         <div className="mb-16 flex flex-wrap items-center justify-center gap-3">
           {contest && (
             <Button asChild>
-              <Link href={`/contests/${contest.slug}`}>
-                {landing.ctaViewContest}
+              <Link href={isEnded ? `/contests/${contest.slug}/works` : `/contests/${contest.slug}`}>
+                {isEnded ? landing.ctaViewResults : landing.ctaViewContest}
                 <ArrowRightIcon />
               </Link>
             </Button>
@@ -86,7 +89,15 @@ export default async function HomePage() {
 
       <section className="mx-auto max-w-[1180px] px-5 pb-14 sm:px-10 sm:pb-24">
         {contest ? (
-          <FeaturedCard contest={contest} />
+          <>
+            <FeaturedCard contest={contest} />
+            {isEnded && (
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-center">
+                <span className="text-[14px] text-muted-2">{landing.endedNotifyHint}</span>
+                <NotifyButton isAuthenticated={Boolean(user)} />
+              </div>
+            )}
+          </>
         ) : (
           <div
             className="rounded-2xl border border-dashed border-line-2 bg-surface px-6 py-10

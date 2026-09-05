@@ -49,22 +49,70 @@ def test_drafts_stay_out_of_the_list(client: APIClient) -> None:
     assert len(_works(client, contest)) == 1
 
 
-def test_the_score_and_reviewer_notes_are_never_exposed(client: APIClient) -> None:
+def test_the_reviewer_notes_are_never_exposed(client: APIClient) -> None:
+    """Балл — часть итогов, заметки проверяющего — нет."""
     contest = EndedContestFactory()
     SubmittedFactory(contest=contest, score=7, reviewer_notes="Слабая архитектура")
 
     row = _works(client, contest)[0]
 
-    assert "score" not in row
     assert "reviewer_notes" not in row
+
+
+def test_the_score_includes_the_video_bonus(client: APIClient) -> None:
+    contest = EndedContestFactory()
+    SubmittedFactory(contest=contest, score=70, video_url="https://youtu.be/demo")
+
+    row = _works(client, contest)[0]
+
+    assert row["total_score"] == 80
+    assert row["video_bonus"] == 10
+
+
+def test_an_unreviewed_work_has_no_score(client: APIClient) -> None:
+    contest = EndedContestFactory()
+    SubmittedFactory(contest=contest)
+
+    assert _works(client, contest)[0]["total_score"] is None
 
 
 def test_winners_come_first(client: APIClient) -> None:
     contest = EndedContestFactory()
-    SubmittedFactory(contest=contest)
-    winner = SubmittedFactory(contest=contest, is_winner=True)
+    SubmittedFactory(contest=contest, score=90)
+    winner = SubmittedFactory(contest=contest, is_winner=True, score=10)
 
     assert _works(client, contest)[0]["username"] == winner.user.username
+
+
+def test_the_list_is_ordered_by_score(client: APIClient) -> None:
+    contest = EndedContestFactory()
+    weaker = SubmittedFactory(contest=contest, score=40)
+    stronger = SubmittedFactory(contest=contest, score=70)
+
+    order = [row["username"] for row in _works(client, contest)]
+
+    assert order == [stronger.user.username, weaker.user.username]
+
+
+def test_the_video_bonus_counts_towards_the_place(client: APIClient) -> None:
+    """Те же 10 баллов, что и на экране проверки, иначе порядок разошёлся бы."""
+    contest = EndedContestFactory()
+    without_video = SubmittedFactory(contest=contest, score=45)
+    with_video = SubmittedFactory(contest=contest, score=40, video_url="https://youtu.be/demo")
+
+    order = [row["username"] for row in _works(client, contest)]
+
+    assert order == [with_video.user.username, without_video.user.username]
+
+
+def test_unreviewed_works_go_below_the_scored_ones(client: APIClient) -> None:
+    contest = EndedContestFactory()
+    unreviewed = SubmittedFactory(contest=contest)
+    scored = SubmittedFactory(contest=contest, score=1)
+
+    order = [row["username"] for row in _works(client, contest)]
+
+    assert order == [scored.user.username, unreviewed.user.username]
 
 
 def test_works_of_another_contest_are_not_mixed_in(client: APIClient) -> None:

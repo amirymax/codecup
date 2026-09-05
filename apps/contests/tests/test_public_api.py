@@ -86,9 +86,8 @@ def test_featured_falls_back_to_the_soonest_deadline(client: APIClient) -> None:
     assert client.get(reverse("contest-featured")).json()["contest"]["title"] == soonest.title
 
 
-def test_featured_is_null_when_nothing_is_running(client: APIClient) -> None:
+def test_featured_is_null_when_there_is_nothing_to_show(client: APIClient) -> None:
     """Это состояние «Сейчас нет активного контеста» на главной."""
-    EndedContestFactory()
     DraftContestFactory()
 
     response = client.get(reverse("contest-featured"))
@@ -97,10 +96,22 @@ def test_featured_is_null_when_nothing_is_running(client: APIClient) -> None:
     assert response.json() == {"contest": None}
 
 
-def test_featured_ignores_an_ended_flagged_contest(client: APIClient) -> None:
-    EndedContestFactory(is_featured=True)
+def test_featured_falls_back_to_the_last_ended_contest(client: APIClient) -> None:
+    """Главная показывает итоги, пока не начался следующий контест."""
+    EndedContestFactory(title="Позапрошлый", deadline=timezone.now() - timedelta(days=9))
+    last = EndedContestFactory(title="Прошлый", deadline=timezone.now() - timedelta(days=1))
 
-    assert client.get(reverse("contest-featured")).json()["contest"] is None
+    contest = client.get(reverse("contest-featured")).json()["contest"]
+
+    assert contest["title"] == last.title
+    assert contest["state"] == "ended"
+
+
+def test_a_live_contest_outranks_an_ended_flagged_one(client: APIClient) -> None:
+    EndedContestFactory(is_featured=True)
+    live = ContestFactory(title="Идёт сейчас")
+
+    assert client.get(reverse("contest-featured")).json()["contest"]["title"] == live.title
 
 
 # --- страница контеста -----------------------------------------------------

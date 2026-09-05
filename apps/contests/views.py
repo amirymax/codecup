@@ -79,8 +79,12 @@ class ContestListView(generics.ListAPIView):
 class FeaturedContestView(APIView):
     """Контест для главной страницы.
 
-    Всегда отдаёт объект с ключом ``contest``, который равен ``null``, если
-    активного контеста нет: это состояние «Сейчас нет активного контеста».
+    Пока контест идёт, показываем его. Когда не идёт ни один — показываем
+    последний завершённый: сразу после дедлайна на главную приходят за
+    итогами, и пустая заглушка вместо только что закончившегося контеста
+    сбивает с толку. Состояние «Сейчас нет активного контеста» остаётся,
+    когда показывать действительно нечего: ``contest`` равен ``null``.
+
     Обёртка, а не голый ``null``, по двум причинам — DRF рендерит None пустым
     телом без Content-Type, и в этот же ответ потом добавятся общие счётчики
     главной, не ломая формат.
@@ -93,6 +97,7 @@ class FeaturedContestView(APIView):
         contest = (
             Contest.objects.live().filter(is_featured=True).first()
             or Contest.objects.live().order_by("deadline").first()
+            or Contest.objects.ended().order_by("-deadline").first()
         )
         serialized = (
             ContestDetailSerializer(contest, context={"request": request}).data if contest else None

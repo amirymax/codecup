@@ -145,15 +145,22 @@ class ProfileSubmissionSerializer(_BaseSubmissionSerializer):
 
 
 class ContestWorkSerializer(_BaseSubmissionSerializer):
-    """Работа участника, открытая всем на странице контеста.
+    """Работа участника в итоговой таблице контеста.
 
-    Ни оценки, ни заметок проверяющего здесь нет и быть не должно: это
-    внутренняя кухня проверки, а не часть работы.
+    Балл виден: список открывается только после дедлайна и отсортирован по
+    оценкам, поэтому места без чисел выглядели бы случайными. Отдаём сумму
+    с бонусом за видео — ровно ту, по которой считается место. А вот заметки
+    проверяющего остаются внутренними: на макете проверки они прямо помечены
+    как невидимые для участника.
     """
 
     username = serializers.CharField(source="user.username", read_only=True)
     display_name = serializers.CharField(source="user.display_name", read_only=True)
     repo_name = serializers.CharField(read_only=True)
+    # null, пока заявку не проверили: у неоценённой работы балла нет, и ноль
+    # тут был бы враньём.
+    total_score = serializers.IntegerField(read_only=True, allow_null=True)
+    video_bonus = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Submission
@@ -167,6 +174,8 @@ class ContestWorkSerializer(_BaseSubmissionSerializer):
             "video_url",
             "description",
             "display_status",
+            "total_score",
+            "video_bonus",
             "submitted_at",
         ]
         read_only_fields = fields
